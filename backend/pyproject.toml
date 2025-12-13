@@ -1,12 +1,12 @@
 [project]
 name = "pydis_nn"
-version = "0.1.0"
+version = "1.2.0"
 description = "Backend API for 5D neural network interpolation system"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}
 authors = [
-    {name = "Your Name", email = "your.email@example.com"}
+    {name = "Harvey Bermingham"}
 ]
 keywords = ["neural-network", "interpolation", "machine-learning", "fastapi"]
 classifiers = [
@@ -21,7 +21,7 @@ classifiers = [
 
 dependencies = [
     "numpy>=1.24.0",
-    "torch>=2.0.0",
+    "tensorflow>=2.13.0",
     "fastapi>=0.115.0",
     "uvicorn[standard]>=0.30.0",
     "pydantic>=2.0.0",

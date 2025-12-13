@@ -1,0 +1,46 @@
+# Sandbox folder (AI-generated plans and test scripts)
+sandbox/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment variables
+.env
+.env.local
+
+# Node (for frontend)
+node_modules/
+.next/
+out/
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+
