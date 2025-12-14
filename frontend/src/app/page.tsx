@@ -62,7 +62,7 @@ type TrainResponse = {
   train_mse?: number;
   val_mse?: number;
   test_mse?: number;
-  train_rmse?: number;
+  epochs_used?: number;
   training_time_seconds?: number;
   
   // Graph Data
@@ -483,7 +483,7 @@ export default function Page() {
                     </button>
 
                     <div className={`transition-all duration-500 ease-in-out overflow-hidden ${uploadResultsExpanded ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'}`}>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                         {/* Features Tile */}
                         <div className="glass-panel rounded-2xl p-4 flex flex-col justify-between h-24">
                           <div className="text-xs font-semibold text-gray-500 uppercase flex items-center gap-1">
@@ -502,6 +502,16 @@ export default function Page() {
                           </div>
                            <div className="text-2xl font-bold text-black">{datasetInfo.memory_usage_mb?.toFixed(2)} MB</div>
                           <div className="text-xs text-gray-400">RAM Usage</div>
+                        </div>
+
+                        {/* Missing Values Tile */}
+                        <div className="glass-panel rounded-2xl p-4 flex flex-col justify-between h-24">
+                          <div className="text-xs font-semibold text-gray-500 uppercase flex items-center gap-1">
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" /></svg>
+                            Missing
+                          </div>
+                          <div className="text-2xl font-bold text-black">{datasetInfo.missing_values?.toLocaleString() || 0}</div>
+                          <div className="text-xs text-gray-400">NaN/Inf Values</div>
                         </div>
 
                         {/* Target Range Tile (REPLACED Target Avg) */}
@@ -749,11 +759,11 @@ export default function Page() {
 
                          <div className="glass-panel rounded-2xl p-4 flex flex-col justify-between h-28">
                           <div className="text-xs font-semibold text-gray-500 uppercase flex items-center gap-1">
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
-                            RMSE
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                            Epochs
                           </div>
-                          <div className="text-2xl font-bold text-black">{trainingResults.train_rmse?.toFixed(4)}</div>
-                          <div className="text-xs text-gray-400">Root Mean Sq.</div>
+                          <div className="text-2xl font-bold text-black">{trainingResults.epochs_used}</div>
+                          <div className="text-xs text-gray-400">Training Epochs</div>
                         </div>
 
                         <div className="glass-panel rounded-2xl p-4 flex flex-col justify-between h-28">

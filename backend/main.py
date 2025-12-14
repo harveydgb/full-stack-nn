@@ -88,7 +88,7 @@ class TrainResponse(BaseModel):
     train_mse: Optional[float] = None
     val_mse: Optional[float] = None
     test_mse: Optional[float] = None
-    train_rmse: Optional[float] = None
+    epochs_used: Optional[int] = None
     training_time_seconds: Optional[float] = None
     loss_history: Optional[List[LossHistoryItem]] = None
     predictions_sample: Optional[List[PredictionSample]] = None
@@ -119,6 +119,7 @@ async def upload_dataset(file: UploadFile = File(...)):
     if not file.filename.endswith('.pkl'):
         raise HTTPException(status_code=400, detail="File must be a .pkl file")
     
+    tmp_path = None
     try:
         with tempfile.NamedTemporaryFile(delete=False, suffix='.pkl') as tmp:
             content = await file.read()
@@ -126,9 +127,13 @@ async def upload_dataset(file: UploadFile = File(...)):
             tmp_path = tmp.name
         
         try:
-            # Load raw data to compute pre-standardization ranges
+            # Load raw data to compute pre-standardization ranges and missing values
             raw_data = load_raw_dataset(tmp_path)
             X_raw = raw_data['X']
+            y_raw = raw_data['y']
+            
+            # Compute missing values from raw data (before any preprocessing)
+            missing_values = int(np.sum(~np.isfinite(X_raw)) + np.sum(~np.isfinite(y_raw)))
             
             # Compute feature ranges from raw data (pre-standardization, pre-missing value handling)
             feature_ranges = [
@@ -143,9 +148,6 @@ async def upload_dataset(file: UploadFile = File(...)):
             data = load_dataset(tmp_path)
             X = data['X']
             y = data['y']
-            
-            # Compute dataset statistics (X and y are cleaned by load_dataset, missing values handled)
-            missing_values = int(np.isnan(X).sum() + np.isnan(y).sum())
             duplicate_rows = int(len(X) - len(np.unique(X, axis=0)))
             memory_usage_mb = float((X.nbytes + y.nbytes) / (1024 * 1024))
             
@@ -161,12 +163,20 @@ async def upload_dataset(file: UploadFile = File(...)):
             
             # Store file path for training and clean up old file if exists
             if app.state.dataset_path and os.path.exists(app.state.dataset_path):
-                os.unlink(app.state.dataset_path)
+                try:
+                    os.unlink(app.state.dataset_path)
+                except (OSError, PermissionError) as e:
+                    # Log but don't fail the upload if old file can't be deleted
+                    # The old file will be overwritten on next successful upload
+                    pass
             
             # Resetting when new dataset uploaded
             app.state.dataset_path = tmp_path
             app.state.model = None
             app.state.scaler = None
+            
+            # Set tmp_path to None to prevent cleanup in outer except (file is now managed by app.state)
+            tmp_path = None
             
             return UploadResponse(
                 status="success",
@@ -181,10 +191,17 @@ async def upload_dataset(file: UploadFile = File(...)):
             )
         except (ValueError, FileNotFoundError) as e:
             # Clean up temp file on validation error
-            os.unlink(tmp_path)
+            if tmp_path and os.path.exists(tmp_path):
+                os.unlink(tmp_path)
             raise HTTPException(status_code=400, detail=str(e))
     
+    except HTTPException:
+        # Re-raise HTTPException (already handled above or needs to propagate)
+        raise
     except Exception as e:
+        # Clean up temp file on any other unexpected error
+        if tmp_path and os.path.exists(tmp_path):
+            os.unlink(tmp_path)
         raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
 
 
@@ -224,54 +241,36 @@ async def train_model(request: TrainRequest):
             random_state=request.random_state
         )
         
-        # Custom callback to capture loss history
-        from tensorflow.keras.callbacks import Callback
-        loss_history_list = []
-        
-        class LossHistory(Callback):
-            def on_epoch_end(self, epoch, logs=None):
-                if logs is not None:
-                    loss_history_list.append({
-                        'epoch': epoch,
-                        'loss': float(logs.get('loss', 0)),
-                        'val_loss': float(logs.get('val_loss', logs.get('loss', 0)))
-                    })
-        
-        # Prepare data and call model.fit directly with callback
-        X_train_float = data['X_train'].astype(np.float32)
-        y_train_float = data['y_train'].astype(np.float32)
-        X_val_float = data['X_val'].astype(np.float32)
-        y_val_float = data['y_val'].astype(np.float32)
-        
+        # Train model with history tracking
         start_time = time.time()
-        history_callback = LossHistory()
-        model.model.fit(
-            X_train_float, y_train_float,
-            epochs=request.max_iter,
-            batch_size=32,
-            verbose=0,
-            validation_data=(X_val_float, y_val_float),
-            callbacks=[history_callback]
+        model, loss_history_list = model.fit(
+            data['X_train'],
+            data['y_train'],
+            X_val=data['X_val'],
+            y_val=data['y_val'],
+            return_history=True
         )
         training_time = time.time() - start_time
         
-        # Calculate R² scores
-        train_r2 = model.score(data['X_train'], data['y_train'])
-        val_r2 = model.score(data['X_val'], data['y_val'])
-        test_r2 = model.score(data['X_test'], data['y_test'])
+        # Get number of epochs actually used (may be less than max_iter due to early stopping)
+        epochs_used = len(loss_history_list) if loss_history_list else request.max_iter
         
-        # Calculate MSE and RMSE
-        from sklearn.metrics import mean_squared_error
-        train_pred = model.predict(data['X_train'])
-        val_pred = model.predict(data['X_val'])
-        test_pred = model.predict(data['X_test'])
+        # Evaluate model performance
+        metrics = model.evaluate_all(
+            data['X_train'], data['y_train'],
+            X_val=data['X_val'], y_val=data['y_val'],
+            X_test=data['X_test'], y_test=data['y_test']
+        )
         
-        train_mse = float(mean_squared_error(data['y_train'], train_pred))
-        val_mse = float(mean_squared_error(data['y_val'], val_pred))
-        test_mse = float(mean_squared_error(data['y_test'], test_pred))
-        train_rmse = float(np.sqrt(train_mse))
+        train_r2 = metrics['train_r2']
+        val_r2 = metrics.get('val_r2', 0.0)
+        test_r2 = metrics.get('test_r2', 0.0)
+        train_mse = metrics['train_mse']
+        val_mse = metrics.get('val_mse', 0.0)
+        test_mse = metrics.get('test_mse', 0.0)
         
         # Sample predictions for scatter plot (take up to 100 samples from test set)
+        test_pred = model.predict(data['X_test'])
         test_sample_size = min(100, len(data['y_test']))
         sample_indices = np.random.choice(len(data['y_test']), test_sample_size, replace=False)
         predictions_sample = [
@@ -291,7 +290,7 @@ async def train_model(request: TrainRequest):
             train_mse=train_mse,
             val_mse=val_mse,
             test_mse=test_mse,
-            train_rmse=train_rmse,
+            epochs_used=epochs_used,
             training_time_seconds=float(training_time),
             loss_history=[LossHistoryItem(**item) for item in loss_history_list],
             predictions_sample=predictions_sample

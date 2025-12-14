@@ -30,7 +30,8 @@ class NeuralNetwork:
         hidden_sizes: List[int] = [64, 32, 16],
         learning_rate: float = 0.001,
         max_iter: int = 1000,
-        random_state: int = 42
+        random_state: int = 42,
+        early_stopping_patience: int = 50
     ):
         """
         Initialize the neural network.
@@ -42,11 +43,15 @@ class NeuralNetwork:
             max_iter: Maximum number of training epochs.
             random_state: Random seed for reproducibility. Sets both
                          TensorFlow and NumPy random seeds if provided.
+            early_stopping_patience: Number of epochs with no improvement after
+                                   which training will be stopped. Only used if
+                                   validation data is provided. Default: 50.
         """
         self.hidden_sizes = hidden_sizes
         self.learning_rate = learning_rate
         self.max_iter = max_iter
         self.random_state = random_state
+        self.early_stopping_patience = early_stopping_patience
         self.model = None
         
         # Set random seeds for reproducibility
@@ -84,8 +89,9 @@ class NeuralNetwork:
         X: np.ndarray, 
         y: np.ndarray,
         X_val: Optional[np.ndarray] = None,
-        y_val: Optional[np.ndarray] = None
-    ) -> 'NeuralNetwork':
+        y_val: Optional[np.ndarray] = None,
+        return_history: bool = False
+    ):
         """
         Train the neural network.
         
@@ -94,9 +100,10 @@ class NeuralNetwork:
             y: Training target array from data.py (already validated: shape (n_samples,))
             X_val: Optional validation features from data.py splits
             y_val: Optional validation targets from data.py splits
+            return_history: If True, return training history along with self
             
         Returns:
-            self for method chaining (scikit-learn compatibility)
+            self (if return_history=False) or tuple of (self, history_dict) (if return_history=True)
         """
         # Convert to float32 for TensorFlow efficiency
         # All shape/feature validations already done in data.py
@@ -105,8 +112,36 @@ class NeuralNetwork:
         
         # Prepare validation data if provided (from data.py splits)
         validation_data = None
+        callbacks = []
+        loss_history_list = []
+        
         if X_val is not None and y_val is not None:
             validation_data = (X_val.astype(np.float32), y_val.astype(np.float32))
+            # Add early stopping callback if validation data is available
+            early_stopping = tf.keras.callbacks.EarlyStopping(
+                monitor='val_loss',
+                patience=self.early_stopping_patience,
+                restore_best_weights=True,
+                verbose=0
+            )
+            callbacks.append(early_stopping)
+        
+        # Add loss history callback if requested
+        if return_history:
+            class LossHistory(tf.keras.callbacks.Callback):
+                def __init__(self, history_list):
+                    super().__init__()
+                    self.history_list = history_list
+                
+                def on_epoch_end(self, epoch, logs=None):
+                    if logs is not None:
+                        self.history_list.append({
+                            'epoch': epoch,
+                            'loss': float(logs.get('loss', 0)),
+                            'val_loss': float(logs.get('val_loss', logs.get('loss', 0)))
+                        })
+            
+            callbacks.append(LossHistory(loss_history_list))
         
         # Train the model
         # Use verbose=0 to keep output clean, batch_size=32 for efficiency
@@ -115,9 +150,12 @@ class NeuralNetwork:
             epochs=self.max_iter,
             batch_size=32,
             verbose=0,
-            validation_data=validation_data
+            validation_data=validation_data,
+            callbacks=callbacks
         )
         
+        if return_history:
+            return self, loss_history_list
         return self
     
     def predict(self, X: np.ndarray) -> np.ndarray:
@@ -163,4 +201,49 @@ class NeuralNetwork:
         
         predictions = self.predict(X)
         return r2_score(y, predictions)
+    
+    def evaluate_all(self, X_train: np.ndarray, y_train: np.ndarray,
+                     X_val: Optional[np.ndarray] = None, y_val: Optional[np.ndarray] = None,
+                     X_test: Optional[np.ndarray] = None, y_test: Optional[np.ndarray] = None) -> dict:
+        """
+        Evaluate model performance on train, validation, and test sets.
+        
+        Computes R² scores and MSE for all provided datasets.
+        
+        Args:
+            X_train: Training features
+            y_train: Training targets
+            X_val: Optional validation features
+            y_val: Optional validation targets
+            X_test: Optional test features
+            y_test: Optional test targets
+            
+        Returns:
+            Dictionary with metrics for each dataset provided:
+            - 'train_r2', 'train_mse' (always present)
+            - 'val_r2', 'val_mse' (if X_val/y_val provided)
+            - 'test_r2', 'test_mse' (if X_test/y_test provided)
+        """
+        from sklearn.metrics import mean_squared_error
+        
+        metrics = {}
+        
+        # Train metrics
+        train_pred = self.predict(X_train)
+        metrics['train_r2'] = float(self.score(X_train, y_train))
+        metrics['train_mse'] = float(mean_squared_error(y_train, train_pred))
+        
+        # Validation metrics
+        if X_val is not None and y_val is not None:
+            val_pred = self.predict(X_val)
+            metrics['val_r2'] = float(self.score(X_val, y_val))
+            metrics['val_mse'] = float(mean_squared_error(y_val, val_pred))
+        
+        # Test metrics
+        if X_test is not None and y_test is not None:
+            test_pred = self.predict(X_test)
+            metrics['test_r2'] = float(self.score(X_test, y_test))
+            metrics['test_mse'] = float(mean_squared_error(y_test, test_pred))
+        
+        return metrics
 
