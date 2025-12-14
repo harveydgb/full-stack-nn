@@ -170,7 +170,6 @@ async def upload_dataset(file: UploadFile = File(...)):
                     # The old file will be overwritten on next successful upload
                     pass
             
-            # Resetting when new dataset uploaded
             app.state.dataset_path = tmp_path
             app.state.model = None
             app.state.scaler = None
@@ -196,7 +195,7 @@ async def upload_dataset(file: UploadFile = File(...)):
             raise HTTPException(status_code=400, detail=str(e))
     
     except HTTPException:
-        # Re-raise HTTPException (already handled above or needs to propagate)
+        # Re-raise HTTPException
         raise
     except Exception as e:
         # Clean up temp file on any other unexpected error
@@ -326,7 +325,7 @@ async def predict(request: PredictRequest):
         # Make prediction
         prediction = app.state.model.predict(X)
         
-        # prediction is already a numpy array, get scalar value
+        # Extract scalar value from numpy array
         pred_value = float(prediction[0]) if len(prediction.shape) > 0 else float(prediction)
         
         return PredictResponse(

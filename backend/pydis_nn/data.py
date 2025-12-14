@@ -15,17 +15,13 @@ from sklearn.preprocessing import StandardScaler
 
 def load_raw_dataset(filepath: str) -> Dict[str, np.ndarray]:
     """
-    Load raw dataset from .pkl file without any preprocessing.
-    
-    Returns the data exactly as stored in the pickle file, before any
-    missing value handling or other transformations. Used for computing
-    pre-standardization feature ranges.
+    Load raw dataset from .pkl file without preprocessing.
     
     Args:
         filepath: Path to the .pkl file
         
     Returns:
-        Dictionary with keys 'X' and 'y' containing numpy arrays (raw, unprocessed)
+        Dictionary with keys 'X' and 'y' containing numpy arrays
         
     Raises:
         FileNotFoundError: If the file doesn't exist
@@ -211,7 +207,6 @@ def standardize_features(
     Standardize features using training set statistics.
     
     Fits scaler on training data, then transforms train/val/test sets.
-    This ensures validation and test sets don't leak information.
     
     Args:
         X_train: Training features (n_samples, n_features)

@@ -459,7 +459,7 @@ export default function Page() {
                 {/* New Upload Results Accordion (Weather App Style) */}
                 {uploadStatus === "success" && datasetInfo && (
                   <div className="animate-fadeIn space-y-4">
-                    <button 
+      <button
                       onClick={() => setUploadResultsExpanded(!uploadResultsExpanded)}
                       className="w-full glass-panel rounded-2xl p-4 flex items-center justify-between transition-all hover:bg-white/40 group"
                     >
@@ -480,7 +480,7 @@ export default function Page() {
                         </div>
                         <svg className={`w-5 h-5 text-gray-400 transition-transform duration-300 ${uploadResultsExpanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
                       </div>
-                    </button>
+      </button>
 
                     <div className={`transition-all duration-500 ease-in-out overflow-hidden ${uploadResultsExpanded ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'}`}>
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">

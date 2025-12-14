@@ -19,14 +19,16 @@ COPY requirements.txt .
 
 # Development stage
 FROM base as development
-RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
+RUN pip install --no-cache-dir -r requirements.txt && \
+    pip install --no-cache-dir -e .
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
 
 # Production stage
 FROM base as production
-RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
+RUN pip install --no-cache-dir -r requirements.txt && \
+    pip install --no-cache-dir -e .
 
 # Create non-root user
 RUN addgroup --system --gid 1001 appgroup && \
@@ -34,6 +36,10 @@ RUN addgroup --system --gid 1001 appgroup && \
 
 # Change ownership of the app directory
 RUN chown -R appuser:appgroup /app
+
+# Set matplotlib config directory to writable location (for non-root user)
+ENV MPLCONFIGDIR=/tmp/matplotlib
+
 USER appuser
 
 # Health check

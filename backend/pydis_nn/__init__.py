@@ -9,12 +9,14 @@ from .data import (
     load_and_preprocess
 )
 from .neuralnetwork import NeuralNetwork
+from .utils import generate_sample_dataset
 
 __all__ = [
     'load_dataset',
     'split_data',
     'standardize_features',
     'load_and_preprocess',
-    'NeuralNetwork'
+    'NeuralNetwork',
+    'generate_sample_dataset'
 ]
 

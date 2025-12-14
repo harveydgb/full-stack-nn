@@ -53,6 +53,7 @@ class NeuralNetwork:
         self.random_state = random_state
         self.early_stopping_patience = early_stopping_patience
         self.model = None
+        self._is_trained = False
         
         # Set random seeds for reproducibility
         tf.random.set_seed(random_state)
@@ -96,28 +97,27 @@ class NeuralNetwork:
         Train the neural network.
         
         Args:
-            X: Training features array from data.py (already validated: shape (n_samples, 5))
-            y: Training target array from data.py (already validated: shape (n_samples,))
-            X_val: Optional validation features from data.py splits
-            y_val: Optional validation targets from data.py splits
+            X: Training features (n_samples, 5)
+            y: Training targets (n_samples,)
+            X_val: Optional validation features
+            y_val: Optional validation targets
             return_history: If True, return training history along with self
             
         Returns:
             self (if return_history=False) or tuple of (self, history_dict) (if return_history=True)
         """
-        # Convert to float32 for TensorFlow efficiency
-        # All shape/feature validations already done in data.py
+        # Convert to float32 for TensorFlow
         X = X.astype(np.float32)
         y = y.astype(np.float32)
         
-        # Prepare validation data if provided (from data.py splits)
+        # Prepare validation data if provided
         validation_data = None
         callbacks = []
         loss_history_list = []
         
         if X_val is not None and y_val is not None:
             validation_data = (X_val.astype(np.float32), y_val.astype(np.float32))
-            # Add early stopping callback if validation data is available
+            # Early stopping callback for validation data
             early_stopping = tf.keras.callbacks.EarlyStopping(
                 monitor='val_loss',
                 patience=self.early_stopping_patience,
@@ -126,7 +126,7 @@ class NeuralNetwork:
             )
             callbacks.append(early_stopping)
         
-        # Add loss history callback if requested
+        # Loss history callback
         if return_history:
             class LossHistory(tf.keras.callbacks.Callback):
                 def __init__(self, history_list):
@@ -143,8 +143,7 @@ class NeuralNetwork:
             
             callbacks.append(LossHistory(loss_history_list))
         
-        # Train the model
-        # Use verbose=0 to keep output clean, batch_size=32 for efficiency
+        # Train model with batch_size=32, verbose=0
         self.model.fit(
             X, y,
             epochs=self.max_iter,
@@ -153,6 +152,8 @@ class NeuralNetwork:
             validation_data=validation_data,
             callbacks=callbacks
         )
+        
+        self._is_trained = True
         
         if return_history:
             return self, loss_history_list
@@ -163,7 +164,7 @@ class NeuralNetwork:
         Make predictions on new data.
         
         Args:
-            X: Feature array from data.py (already validated: shape (n_samples, 5))
+            X: Feature array (n_samples, 5)
             
         Returns:
             Predictions array with shape (n_samples,)
@@ -171,18 +172,23 @@ class NeuralNetwork:
         Raises:
             ValueError: If model hasn't been trained yet
         """
-        if self.model is None:
+        if self.model is None or not self._is_trained:
             raise ValueError("Model must be trained before making predictions. Call fit() first.")
         
         # Convert to float32 for TensorFlow
-        # All validations already done in data.py
         X = X.astype(np.float32)
         
         # Make predictions
         predictions = self.model.predict(X, verbose=0)
         
         # Return as 1D array (squeeze the output dimension)
-        return np.squeeze(predictions)
+        predictions = np.squeeze(predictions)
+        
+        # Ensure we always return at least 1D array (not scalar) for consistency
+        if predictions.ndim == 0:
+            predictions = np.array([predictions])
+        
+        return predictions
     
     def score(self, X: np.ndarray, y: np.ndarray) -> float:
         """
@@ -191,8 +197,8 @@ class NeuralNetwork:
         Useful for evaluating model performance.
         
         Args:
-            X: Feature array from data.py (already validated: shape (n_samples, 5))
-            y: True target values from data.py (already validated: shape (n_samples,))
+            X: Feature array (n_samples, 5)
+            y: True target values (n_samples,)
             
         Returns:
             R² score
