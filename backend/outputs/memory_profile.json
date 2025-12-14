@@ -1,0 +1,29 @@
+{
+  "timestamp": "2025-12-14T23:20:27.465127",
+  "dataset_size": 5000,
+  "hyperparameters": {
+    "hidden_sizes": [
+      64,
+      32,
+      16
+    ],
+    "learning_rate": 0.001,
+    "max_iter": 300,
+    "random_state": 42,
+    "early_stopping_patience": 10000
+  },
+  "memory_usage_mb": {
+    "after_dataset_load_mb": 0.35,
+    "after_splitting_mb": 0.39,
+    "after_preprocessing_mb": 0.54,
+    "after_model_creation_mb": 0.85,
+    "before_training_mb": 0.85,
+    "peak_during_training_mb": 4.94,
+    "after_training_mb": 4.94,
+    "before_prediction_mb": 4.94,
+    "peak_during_prediction_mb": 4.94,
+    "after_prediction_mb": 4.94,
+    "training_memory_increase_mb": 4.09,
+    "prediction_memory_increase_mb": 0.0
+  }
+}

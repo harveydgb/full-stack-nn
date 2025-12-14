@@ -20,7 +20,7 @@ class NeuralNetwork:
     Attributes:
         hidden_sizes: List of hidden layer sizes (default: [64, 32, 16])
         learning_rate: Learning rate for Adam optimizer (default: 0.001)
-        max_iter: Maximum number of training epochs (default: 1000)
+        max_iter: Maximum number of training epochs (default: 300)
         random_state: Random seed for reproducibility (optional)
         model: The compiled Keras model
     """
@@ -29,7 +29,7 @@ class NeuralNetwork:
         self,
         hidden_sizes: List[int] = [64, 32, 16],
         learning_rate: float = 0.001,
-        max_iter: int = 1000,
+        max_iter: int = 300,
         random_state: int = 42,
         early_stopping_patience: int = 50
     ):

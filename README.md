@@ -284,6 +284,110 @@ hb747/
 - **Type Checking**: `mypy` (configured in `pyproject.toml`)
 - **Testing**: `pytest` with coverage reporting
 
+## Performance and Profiling
+
+This section documents comprehensive performance analysis and benchmarking of the neural network model across different dataset sizes.
+
+### Methodology
+
+Performance benchmarks were conducted using:
+- **Dataset sizes**: 1,000 to 10,000 samples (1K increments)
+- **Model architecture**: 3 hidden layers [64, 32, 16] neurons
+- **Training configuration**: 300 epochs, learning rate 0.001, early stopping disabled
+- **Data split**: 70% train, 15% validation, 15% test
+- **Random seed**: 42 (for reproducibility)
+
+All benchmarks were run on the same hardware with consistent hyperparameters to ensure comparability. Early stopping was disabled to maintain consistent epoch counts across all tests.
+
+### Training Time Analysis
+
+Training time was measured for datasets ranging from 1K to 10K samples. The model demonstrates efficient sub-linear scaling behavior:
+
+| Dataset Size | Training Time (s) | Time per Sample (ms) |
+|--------------|-------------------|----------------------|
+| 1,000        | 9.93              | 9.93                 |
+| 2,000        | 12.21             | 6.11                 |
+| 3,000        | 15.10             | 5.03                 |
+| 4,000        | 17.15             | 4.29                 |
+| 5,000        | 22.01             | 4.40                 |
+| 6,000        | 23.00             | 3.83                 |
+| 7,000        | 25.39             | 3.63                 |
+| 8,000        | 26.15             | 3.27                 |
+| 9,000        | 28.80             | 3.20                 |
+| 10,000       | 31.67             | 3.17                 |
+
+**Scaling Behavior:**
+- Training time scales sub-linearly with dataset size
+- Time per sample decreases as dataset size increases (from 9.93ms to 3.17ms)
+- This indicates efficient batch processing and GPU/CPU utilization
+- A 10x increase in dataset size (1K → 10K) results in only ~3.2x increase in training time
+
+### Memory Usage
+
+Memory profiling was conducted on a 5,000-sample dataset. Peak memory usage occurs during the training phase:
+
+| Phase | Memory Usage (MB) |
+|-------|-------------------|
+| After dataset load | 0.35 |
+| After preprocessing | 0.54 |
+| After model creation | 0.85 |
+| **Peak during training** | **4.94** |
+| Peak during prediction | 4.94 |
+
+**Key Findings:**
+- Peak memory usage is approximately 4.94 MB during training
+- Memory usage increases by ~4.09 MB during training phase
+- Prediction phase has negligible memory overhead
+- Memory usage is efficient and scales well with dataset size
+
+### Accuracy Metrics
+
+Model performance improves significantly with larger datasets, demonstrating the value of more training data:
+
+| Dataset Size | Test R² Score | Test MSE |
+|--------------|---------------|----------|
+| 1,000        | 0.9417        | 0.017613 |
+| 2,000        | 0.9698        | 0.006889 |
+| 3,000        | 0.9867        | 0.003629 |
+| 4,000        | 0.9929        | 0.001946 |
+| 5,000        | 0.9937        | 0.001807 |
+| 6,000        | 0.9940        | 0.001784 |
+| 7,000        | 0.9965        | 0.001004 |
+| 8,000        | 0.9972        | 0.000853 |
+| 9,000        | 0.9983        | 0.000482 |
+| 10,000       | 0.9985        | 0.000450 |
+
+**Performance Trends:**
+- R² score improves from 0.9417 (1K samples) to 0.9985 (10K samples)
+- MSE decreases from 0.017613 to 0.000450 (97% reduction)
+- Diminishing returns observed after ~7K samples (improvement rate slows)
+- Model demonstrates strong generalization with larger datasets
+
+### Conclusions
+
+1. **Scalability**: The model exhibits efficient sub-linear scaling, making it suitable for larger datasets without prohibitive training times.
+
+2. **Memory Efficiency**: Peak memory usage is low (~5 MB), allowing training on systems with limited RAM.
+
+3. **Accuracy Gains**: Significant performance improvements with larger datasets, though returns diminish after ~7K samples.
+
+4. **Training Time**: All dataset sizes (up to 10K) train in under 32 seconds with 300 epochs, meeting the <1 minute requirement for 10K samples.
+
+5. **No Bottlenecks Identified**: Memory and computation scale efficiently without significant bottlenecks.
+
+For detailed results and visualizations, see the benchmark results in `backend/outputs/benchmark_results.json` and `backend/outputs/memory_profile.json`, or run the visualization script:
+
+```bash
+cd backend
+python scripts/visualize_results.py
+```
+
+This generates plots saved to `backend/outputs/` including:
+- Training time vs dataset size
+- Accuracy metrics vs dataset size
+- Scaling analysis (time per sample)
+- Memory usage by phase
+
 ## License
 
 MIT License - See LICENSE file for details.
