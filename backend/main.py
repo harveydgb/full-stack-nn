@@ -143,7 +143,7 @@ async def train_model(request: TrainRequest):
             train_size=request.train_size,
             val_size=request.val_size,
             test_size=request.test_size,
-            standardize=request.standardize,
+            standardize=True,
             random_state=request.random_state
         )
         
