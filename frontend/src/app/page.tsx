@@ -32,6 +32,8 @@ type UploadResponse = {
     max_avg: number;
     target_mean: number;
     target_std: number;
+    target_min: number;
+    target_max: number;
   };
   feature_ranges?: Array<{
     min: number;
@@ -151,33 +153,7 @@ export default function Page() {
       }
 
       setUploadStatus("success");
-      
-      // Mocking Dataset Statistics (Since backend might not send these yet)
-      const mockStats = {
-        missing_values: 0,
-        duplicate_rows: Math.floor(Math.random() * 20),
-        memory_usage_mb: parseFloat((Math.random() * 5 + 1).toFixed(2)),
-          feature_stats: {
-            min_avg: -2.5,
-            max_avg: 4.8,
-            target_mean: 125.4,
-            target_std: 15.2,
-          },
-          feature_ranges: [
-            { min: -5.2, max: 4.8 },
-            { min: -3.1, max: 6.5 },
-            { min: -2.9, max: 5.3 },
-            { min: -4.1, max: 7.2 },
-            { min: -3.5, max: 5.9 },
-          ]
-      };
-
-      setDatasetInfo({
-        ...data,
-        ...mockStats, // Merge mock stats
-        n_samples: data.n_samples || 1000,
-        n_features: data.n_features || 5
-      });
+      setDatasetInfo(data);
       
     } catch (e: any) {
       setUploadStatus("error");
@@ -204,6 +180,14 @@ export default function Page() {
   };
 
   const handleTrain = async () => {
+    // Validate parameters before training
+    const validationError = validateTrainingParams(trainingParams);
+    if (validationError) {
+      setTrainingStatus("error");
+      setTrainingError(validationError);
+      return;
+    }
+
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
@@ -225,21 +209,12 @@ export default function Page() {
 
       const data = (await res.json()) as TrainResponse;
 
-      if (!res.ok || data.status !== "success") {
-        throw new Error(data.message || "Training failed");
-      }
+        if (!res.ok || data.status !== "success") {
+          throw new Error(data.message || "Training failed");
+        }
 
-      const mockData = generateMockGraphData();
-      const enrichedData: TrainResponse = {
-        ...data,
-        test_mse: data.test_mse || 0.0421,
-        train_rmse: data.train_rmse || 0.2051,
-        loss_history: data.loss_history || mockData.loss_history,
-        predictions_sample: data.predictions_sample || mockData.predictions_sample,
-      };
-
-      setTrainingStatus("success");
-      setTrainingResults(enrichedData);
+        setTrainingStatus("success");
+        setTrainingResults(data);
       abortControllerRef.current = null;
     } catch (e: any) {
       if (e.name === 'AbortError') {
@@ -276,6 +251,41 @@ export default function Page() {
       setPredictStatus("error");
       setPredictError(e.message || "Prediction failed");
     }
+  };
+
+  const validateTrainingParams = (params: TrainRequest): string | null => {
+    // Validate hidden layers: must be positive, max 6 layers
+    if (params.hidden_sizes.length > 6) {
+      return "Maximum 6 hidden layers allowed";
+    }
+    for (const size of params.hidden_sizes) {
+      if (size <= 0) {
+        return "Hidden layer sizes must be positive";
+      }
+      if (size > 1024) {
+        return "Maximum 1024 neurons per layer";
+      }
+    }
+    
+    // Validate learning rate: must be positive and <= 1
+    if (params.learning_rate <= 0) {
+      return "Learning rate must be positive";
+    }
+    if (params.learning_rate > 1) {
+      return "Learning rate must be <= 1";
+    }
+    
+    // Validate max_iter: must be between 5 and 1000
+    if (params.max_iter < 5 || params.max_iter > 1000) {
+      return "Max iterations must be between 5 and 1000";
+    }
+    
+    // Validate train/val/test sizes are positive
+    if (params.train_size <= 0 || params.val_size <= 0 || params.test_size <= 0) {
+      return "Train, validation, and test sizes must be positive";
+    }
+    
+    return null;
   };
 
   const updateFeature = (index: number, value: string) => {
@@ -472,8 +482,8 @@ export default function Page() {
                       </div>
                     </button>
 
-                    <div className={`transition-all duration-500 ease-in-out overflow-hidden ${uploadResultsExpanded ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0'}`}>
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div className={`transition-all duration-500 ease-in-out overflow-hidden ${uploadResultsExpanded ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'}`}>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                         {/* Features Tile */}
                         <div className="glass-panel rounded-2xl p-4 flex flex-col justify-between h-24">
                           <div className="text-xs font-semibold text-gray-500 uppercase flex items-center gap-1">
@@ -484,49 +494,52 @@ export default function Page() {
                           <div className="text-xs text-gray-400">Input Columns</div>
                         </div>
 
-                        {/* Duplicates Tile */}
-                        <div className="glass-panel rounded-2xl p-4 flex flex-col justify-between h-24">
-                          <div className="text-xs font-semibold text-gray-500 uppercase flex items-center gap-1">
-                             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-                             Duplicates
-                          </div>
-                          <div className="text-2xl font-bold text-black">{datasetInfo.duplicate_rows}</div>
-                          <div className="text-xs text-gray-400">Identical Rows</div>
-                        </div>
-
                          {/* Memory Usage Tile */}
                          <div className="glass-panel rounded-2xl p-4 flex flex-col justify-between h-24">
                           <div className="text-xs font-semibold text-gray-500 uppercase flex items-center gap-1">
                             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" /></svg>
                             Memory
                           </div>
-                          <div className="text-2xl font-bold text-black">{datasetInfo.memory_usage_mb} MB</div>
+                           <div className="text-2xl font-bold text-black">{datasetInfo.memory_usage_mb?.toFixed(2)} MB</div>
                           <div className="text-xs text-gray-400">RAM Usage</div>
                         </div>
 
-                        {/* Target Mean Tile */}
+                        {/* Target Range Tile (REPLACED Target Avg) */}
                         <div className="glass-panel rounded-2xl p-4 flex flex-col justify-between h-24">
                           <div className="text-xs font-semibold text-gray-500 uppercase flex items-center gap-1">
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
-                            Target Avg
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
+                            Target Range
                           </div>
-                          <div className="text-2xl font-bold text-black">{datasetInfo.feature_stats?.target_mean.toFixed(1)}</div>
-                          <div className="text-xs text-gray-400">Mean Output</div>
+                          <div className="text-lg font-bold text-black truncate">
+                            [{datasetInfo.feature_stats?.target_min.toFixed(1)}, {datasetInfo.feature_stats?.target_max.toFixed(1)}]
+                          </div>
+                          <div className="text-xs text-gray-400">Output Min-Max</div>
                         </div>
                       </div>
 
-                      {/* Feature Ranges Section */}
-                      <div className="mt-4 space-y-3">
-                        <div className="text-xs font-semibold text-gray-500 uppercase">Feature Ranges</div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {/* REDESIGNED Feature Ranges Section */}
+                      <div className="mt-6 space-y-4">
+                        <div className="flex items-center space-x-2">
+                          <div className="h-4 w-1 bg-black rounded-full"></div>
+                          <div className="text-xs font-bold text-gray-500 uppercase tracking-wider">Feature Distribution (Pre-Standardization)</div>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                           {datasetInfo.feature_ranges?.map((range, idx) => (
-                            <div key={idx} className="glass-panel rounded-xl p-3 flex items-center justify-between">
-                              <div className="flex items-center space-x-2">
-                                <span className="text-xs font-semibold text-gray-500 w-16">Feature {idx + 1}</span>
-                                <span className="text-sm font-medium text-black">
-                                  [{range.min.toFixed(2)}, {range.max.toFixed(2)}]
-                                </span>
-                              </div>
+                            <div key={idx} className="glass-panel rounded-2xl p-4 transition-all hover:scale-[1.01] duration-200">
+                                <div className="flex justify-between items-center mb-3">
+                                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Feature {idx + 1}</span>
+                                </div>
+                                
+                                <div className="flex items-center space-x-3">
+                                    <span className="text-sm font-mono font-semibold text-gray-600 w-12 text-right">{range.min.toFixed(1)}</span>
+                                    
+                                    {/* The Visual Bar */}
+                                    <div className="flex-1 h-1.5 bg-gray-200/80 rounded-full overflow-hidden relative">
+                                        <div className="absolute inset-0 bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 opacity-90"></div>
+                                    </div>
+                                    
+                                    <span className="text-sm font-mono font-semibold text-gray-600 w-12 text-left">{range.max.toFixed(1)}</span>
+                                </div>
                             </div>
                           ))}
                         </div>
@@ -558,6 +571,7 @@ export default function Page() {
 
               <div className="space-y-8">
                 <div className="glass-panel rounded-3xl p-6 space-y-6">
+                  {/* ... Inputs (Hidden Layers, Learning Rate, etc.) ... */}
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-3">Hidden layers</label>
                     <div className="grid grid-cols-3 gap-3">
@@ -565,10 +579,14 @@ export default function Page() {
                         <div key={idx} className="relative">
                           <input
                             type="number"
+                            min="1"
+                            max="1024"
                             value={size}
                             onChange={(e) => {
+                              const value = parseInt(e.target.value);
+                              if (isNaN(value)) return;
                               const newSizes = [...trainingParams.hidden_sizes];
-                              newSizes[idx] = parseInt(e.target.value) || 0;
+                              newSizes[idx] = Math.max(1, Math.min(1024, value)); // Ensure between 1 and 1024
                               setTrainingParams({ ...trainingParams, hidden_sizes: newSizes });
                             }}
                             disabled={trainingStatus === "training" || trainingStatus === "success"}
@@ -593,6 +611,21 @@ export default function Page() {
                         </div>
                       ))}
                     </div>
+                    {trainingParams.hidden_sizes.length < 6 && trainingStatus !== "training" && trainingStatus !== "success" && (
+                      <button
+                        onClick={() => {
+                          const lastSize = trainingParams.hidden_sizes[trainingParams.hidden_sizes.length - 1] || 32;
+                          const newSizes = [...trainingParams.hidden_sizes, lastSize];
+                          setTrainingParams({ ...trainingParams, hidden_sizes: newSizes });
+                        }}
+                        className="mt-2 text-xs text-gray-500 hover:text-gray-700 transition-colors flex items-center space-x-1"
+                      >
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                        </svg>
+                        <span>Add layer</span>
+                      </button>
+                    )}
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
@@ -601,13 +634,18 @@ export default function Page() {
                       <input
                         type="number"
                         step="0.0001"
+                        min="0.0001"
+                        max="1"
                         value={trainingParams.learning_rate}
-                        onChange={(e) =>
+                        onChange={(e) => {
+                          const value = parseFloat(e.target.value);
+                          if (isNaN(value)) return;
+                          const clampedValue = Math.max(0.0001, Math.min(1, value));
                           setTrainingParams({
                             ...trainingParams,
-                            learning_rate: parseFloat(e.target.value) || 0.001,
-                          })
-                        }
+                            learning_rate: clampedValue,
+                          });
+                        }}
                         disabled={trainingStatus === "training" || trainingStatus === "success"}
                         className={`w-full px-4 py-3 bg-white/90 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-all text-base text-black font-medium ${
                           trainingStatus === "training" || trainingStatus === "success"
@@ -620,13 +658,18 @@ export default function Page() {
                       <label className="block text-sm font-semibold text-gray-700 mb-3">Max iterations</label>
                       <input
                         type="number"
+                        min="5"
+                        max="1000"
                         value={trainingParams.max_iter}
-                        onChange={(e) =>
+                        onChange={(e) => {
+                          const value = parseInt(e.target.value);
+                          if (isNaN(value)) return;
+                          const clampedValue = Math.max(5, Math.min(1000, value));
                           setTrainingParams({
                             ...trainingParams,
-                            max_iter: parseInt(e.target.value) || 1000,
-                          })
-                        }
+                            max_iter: clampedValue,
+                          });
+                        }}
                         disabled={trainingStatus === "training" || trainingStatus === "success"}
                         className={`w-full px-4 py-3 bg-white/90 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-all text-base text-black font-medium ${
                           trainingStatus === "training" || trainingStatus === "success"
@@ -726,56 +769,65 @@ export default function Page() {
                       {/* Charts Grid */}
                       <div className="grid grid-cols-1 gap-3">
                         {/* Loss Chart */}
-                        <div className="glass-panel rounded-2xl p-5 h-64 relative">
-                          <div className="text-xs font-semibold text-gray-500 uppercase mb-4 flex items-center gap-2">
+                        <div className="glass-panel rounded-2xl p-4 h-64 relative">
+                          <div className="text-xs font-semibold text-gray-500 uppercase mb-2 flex items-center gap-2">
                             <span className="w-2 h-2 rounded-full bg-blue-500"></span> Training Loss
                             <span className="w-2 h-2 rounded-full bg-orange-400 ml-2"></span> Validation Loss
                           </div>
-                          <ResponsiveContainer width="100%" height="80%">
-                            <LineChart data={trainingResults.loss_history || []}>
-                              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                              <XAxis dataKey="epoch" tick={{fontSize: 10}} tickLine={false} axisLine={false} />
-                              <YAxis tick={{fontSize: 10}} tickLine={false} axisLine={false} domain={['auto', 'auto']} />
-                              <Tooltip 
-                                contentStyle={{backgroundColor: 'rgba(255,255,255,0.8)', borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px rgba(0,0,0,0.1)'}}
-                                itemStyle={{fontSize: '12px'}}
-                              />
-                              <Line type="monotone" dataKey="loss" stroke="#3B82F6" strokeWidth={2} dot={false} />
-                              <Line type="monotone" dataKey="val_loss" stroke="#FB923C" strokeWidth={2} dot={false} />
-                            </LineChart>
-                          </ResponsiveContainer>
-                          <div className="absolute top-5 right-5 text-xs text-gray-400">Loss vs Epochs 
-
-[Image of Loss Curve]
-</div>
+                          <div className="h-[calc(100%-2.5rem)]">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <LineChart data={trainingResults.loss_history || []} margin={{ top: 5, right: 5, left: -25, bottom: -14 }}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                                <XAxis dataKey="epoch" tick={{fontSize: 10}} tickLine={false} axisLine={false} />
+                                <YAxis tick={{fontSize: 10}} tickLine={false} axisLine={false} domain={['auto', 'auto']} />
+                                <Tooltip 
+                                  contentStyle={{backgroundColor: 'rgba(255,255,255,0.8)', borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px rgba(0,0,0,0.1)'}}
+                                  itemStyle={{fontSize: '12px'}}
+                                />
+                                <Line type="monotone" dataKey="loss" stroke="#3B82F6" strokeWidth={2} dot={false} />
+                                <Line type="monotone" dataKey="val_loss" stroke="#FB923C" strokeWidth={2} dot={false} />
+                              </LineChart>
+                            </ResponsiveContainer>
+                          </div>
                         </div>
 
                         {/* Predictions Scatter */}
-                        <div className="glass-panel rounded-2xl p-5 h-64 relative">
-                          <div className="text-xs font-semibold text-gray-500 uppercase mb-4">True (X) vs Predicted (Y)</div>
-                          <ResponsiveContainer width="100%" height="80%">
-                            <ScatterChart>
-                              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                              <XAxis type="number" dataKey="true" name="True" tick={{fontSize: 10}} tickLine={false} axisLine={false} />
-                              <YAxis type="number" dataKey="pred" name="Predicted" tick={{fontSize: 10}} tickLine={false} axisLine={false} />
-                              <ZAxis range={[60, 60]} />
-                              <Tooltip cursor={{ strokeDasharray: '3 3' }} 
-                                contentStyle={{backgroundColor: 'rgba(255,255,255,0.8)', borderRadius: '12px', border: 'none'}}
-                              />
-                              <Scatter name="Predictions" data={trainingResults.predictions_sample || []} fill="#000000" fillOpacity={0.6} />
-                              {/* Reference line x=y ideally */}
-                            </ScatterChart>
-                          </ResponsiveContainer>
-                          <div className="absolute top-5 right-5 text-xs text-gray-400">Ideal Fit (Diagonal) 
-
-[Image of Scatter Plot]
-</div>
+                        <div className="glass-panel rounded-2xl p-4 h-64 relative">
+                          <div className="text-xs font-semibold text-gray-500 uppercase mb-2">True (X) vs Predicted (Y) - Sample (up to 100 points)</div>
+                          <div className="h-[calc(100%-2.5rem)]">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <ScatterChart margin={{ top: 5, right: 5, left: -25, bottom: -14 }}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                                <XAxis type="number" dataKey="true" name="True" tick={{fontSize: 10}} tickLine={false} axisLine={false} />
+                                <YAxis type="number" dataKey="pred" name="Predicted" tick={{fontSize: 10}} tickLine={false} axisLine={false} />
+                                <ZAxis range={[60, 60]} />
+                                <Tooltip cursor={{ strokeDasharray: '3 3' }} 
+                                  contentStyle={{backgroundColor: 'rgba(255,255,255,0.8)', borderRadius: '12px', border: 'none'}}
+                                />
+                                {trainingResults.predictions_sample && trainingResults.predictions_sample.length > 0 && (() => {
+                                  const allVals = trainingResults.predictions_sample.flatMap(p => [p.true, p.pred]);
+                                  const minVal = Math.min(...allVals);
+                                  const maxVal = Math.max(...allVals);
+                                  return (
+                                    <ReferenceLine 
+                                      segment={[{ x: minVal, y: minVal }, { x: maxVal, y: maxVal }]}
+                                      stroke="#666" 
+                                      strokeDasharray="3 3" 
+                                      strokeWidth={1.5}
+                                    />
+                                  );
+                                })()}
+                                <Scatter name="Predictions" data={trainingResults.predictions_sample || []} fill="#000000" fillOpacity={0.6} />
+                              </ScatterChart>
+                            </ResponsiveContainer>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
                 )}
 
+                {/* THE REVERTED BUTTONS */}
                 <div className="flex space-x-4">
                   <button
                     onClick={() => setCurrentStep(1)}
@@ -788,21 +840,11 @@ export default function Page() {
                     disabled={trainingStatus === "training"}
                     className="flex-1 bg-black text-white py-4 rounded-full text-base font-semibold hover:bg-gray-900 transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center space-x-2 shadow-sm"
                   >
-                    {trainingStatus === "training" ? (
-                      <>
-                        <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        <span>Training...</span>
-                      </>
-                    ) : (
-                      <>
-                        <span>{trainingStatus === "success" ? "Continue" : "Train model"}</span>
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                        </svg>
-                      </>
+                    <span>{trainingStatus === "training" ? "Training..." : trainingStatus === "success" ? "Continue" : "Train model"}</span>
+                    {trainingStatus !== "training" && (
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                      </svg>
                     )}
                   </button>
                 </div>

@@ -13,6 +13,48 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
 
+def load_raw_dataset(filepath: str) -> Dict[str, np.ndarray]:
+    """
+    Load raw dataset from .pkl file without any preprocessing.
+    
+    Returns the data exactly as stored in the pickle file, before any
+    missing value handling or other transformations. Used for computing
+    pre-standardization feature ranges.
+    
+    Args:
+        filepath: Path to the .pkl file
+        
+    Returns:
+        Dictionary with keys 'X' and 'y' containing numpy arrays (raw, unprocessed)
+        
+    Raises:
+        FileNotFoundError: If the file doesn't exist
+        ValueError: If the data format is invalid
+    """
+    try:
+        with open(filepath, 'rb') as f:
+            data = pickle.load(f)
+    except FileNotFoundError:
+        raise FileNotFoundError(f"Dataset file not found: {filepath}")
+    except Exception as e:
+        raise ValueError(f"Error loading pickle file: {str(e)}")
+    
+    # Expect dictionary format with 'X' and 'y' keys
+    if not isinstance(data, dict):
+        raise ValueError(f"Expected dictionary format, got {type(data)}")
+    if 'X' not in data or 'y' not in data:
+        raise ValueError("Dictionary must contain 'X' and 'y' keys")
+    
+    X = np.array(data['X'])
+    y = np.array(data['y'])
+    
+    # Convert to numpy arrays and ensure 2D for X, 1D for y
+    X = np.atleast_2d(X) if X.ndim == 1 else X
+    y = np.squeeze(y)
+    
+    return {'X': X, 'y': y}
+
+
 def load_dataset(filepath: str) -> Dict[str, np.ndarray]:
     """
     Load a 5D dataset from a pickle file.
