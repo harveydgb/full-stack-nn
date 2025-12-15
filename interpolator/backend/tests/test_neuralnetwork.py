@@ -19,7 +19,7 @@ class TestNeuralNetworkInit:
         
         assert model.hidden_sizes == [64, 32, 16]
         assert model.learning_rate == 0.001
-        assert model.max_iter == 1000
+        assert model.max_iter == 300
         assert model.random_state == 42
         assert model.model is not None
     
