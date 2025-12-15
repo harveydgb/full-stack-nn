@@ -17,7 +17,7 @@ from pydis_nn.neuralnetwork import NeuralNetwork
 app = FastAPI(
     title="5D Neural Network Interpolator API",
     description="API for training and querying 5D neural network interpolation models",
-    version="1.0.0",
+    version="1.0.1",
 )
 
 app.add_middleware(

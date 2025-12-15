@@ -12,8 +12,8 @@ sys.path.insert(0, str(backend_dir))
 project = '5D Neural Network Interpolator'
 copyright = '2025, Harvey Bermingham'
 author = 'Harvey Bermingham'
-release = '1.0.0'
-version = '1.0.0'
+release = '1.0.1'
+version = '1.0.1'
 
 # General configuration
 extensions = [
