@@ -55,6 +55,12 @@ Contents
 
    testing/index
 
+.. toctree::
+   :maxdepth: 2
+   :caption: Performance
+
+   performance
+
 Indices and tables
 ==================
 

@@ -1,6 +1,6 @@
 [project]
 name = "pydis_nn"
-version = "1.2.0"
+version = "1.0.0"
 description = "Backend API for 5D neural network interpolation system"
 readme = "README.md"
 requires-python = ">=3.10"

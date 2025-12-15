@@ -33,20 +33,20 @@ sphinx-build -b html "$SOURCE_DIR" "$BUILD_DIR/html"
 
 # Display results
 INDEX_PATH="$BUILD_DIR/html/index.html"
-echo ""
-echo "=========================================="
-echo "Documentation built successfully!"
-echo "=========================================="
-echo ""
-echo "Output location: $INDEX_PATH"
-echo ""
-echo "To view in browser:"
-echo "  file://$INDEX_PATH"
-echo ""
+    echo ""
+    echo "=========================================="
+    echo "Documentation built successfully!"
+    echo "=========================================="
+    echo ""
+    echo "Output location: $INDEX_PATH"
+    echo ""
+    echo "To view in browser:"
+    echo "  file://$INDEX_PATH"
+    echo ""
 echo "Or run:"
 echo "  open $INDEX_PATH  # macOS"
 echo "  xdg-open $INDEX_PATH  # Linux"
-
+    
 # Try to open in browser (macOS)
 if [[ "$OSTYPE" == "darwin"* ]]; then
     echo ""
