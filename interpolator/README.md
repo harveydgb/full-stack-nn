@@ -11,6 +11,8 @@ This project implements a complete machine learning pipeline:
 
 The system automatically handles data preprocessing (missing values, standardization), train/validation/test splits, and provides comprehensive metrics and visualizations.
 
+**📦 [Install from PyPI](https://pypi.org/project/pydis-nn/)** | **📚 [Full Documentation](https://pydis-nn.readthedocs.io/)** | **📊 [Performance Profiling](https://pydis-nn.readthedocs.io/en/latest/performance.html)**
+
 ## Prerequisites
 
 - **Python** 3.10+ (for backend)
@@ -50,6 +52,18 @@ Start both backend and frontend services:
 docker-compose up --build
 ```
 
+Or use the convenience script:
+
+```bash
+./scripts/docker-start.sh
+```
+
+Or use the launch script with health checks:
+
+```bash
+./scripts/launch-stack.sh
+```
+
 Services will be available at:
 - **Backend API**: http://localhost:8000
 - **Frontend UI**: http://localhost:3000
@@ -59,6 +73,17 @@ Services will be available at:
 Stop services:
 ```bash
 docker-compose down
+```
+
+Or use the convenience script:
+
+```bash
+./scripts/docker-stop.sh
+```
+
+View logs:
+```bash
+./scripts/docker-logs.sh
 ```
 
 ### Option 2: Manual Setup
@@ -98,6 +123,26 @@ npm run dev
 Frontend will be available at http://localhost:3000
 
 ## Running Tests
+
+### Full Pipeline Testing
+
+To test the complete application pipeline (backend and frontend together):
+
+```bash
+cd interpolator
+./scripts/test-pipeline.sh
+```
+
+This script:
+1. Starts both backend and frontend services using Docker Compose
+2. Waits for services to become healthy
+3. Tests API endpoints (health check, root, API docs)
+4. Provides status summary and next steps
+
+This is useful for:
+- Verifying the complete stack works end-to-end
+- Testing after deployment
+- Validating Docker Compose configuration
 
 ### Backend Tests
 
@@ -372,6 +417,44 @@ This generates plots saved to `backend/outputs/` including:
 - Accuracy metrics vs dataset size
 - Scaling analysis (time per sample)
 - Memory usage by phase
+
+For comprehensive performance profiling documentation including system specifications, timing methodology, detailed benchmark configuration, and visualization graphs, see the **Performance Profiling** section in the Read the Docs documentation:
+
+**📚 [Performance Profiling Documentation](https://pydis-nn.readthedocs.io/en/latest/performance.html)**
+
+## Version Information
+
+Current version: **1.0.1**
+
+This project uses semantic versioning. The version number is defined in:
+- `backend/pyproject.toml`
+- `backend/docs/source/conf.py`
+- `backend/main.py` (FastAPI app version)
+
+## Git Tags
+
+This project uses git tags to mark major milestones. Tags are created for each completed task:
+
+- `task1-repository-structure` - Task 1: Repository structure
+- `task2-package-config` - Task 2: Package configuration
+- `task3-data-handling` - Task 3: Data handling module
+- `task4-neural-network` - Task 4: Neural network implementation
+- `task5-fastapi-backend` - Task 5: FastAPI backend
+- `task6-frontend` - Task 6: Next.js frontend
+- `task7-testing` - Task 7: Testing and reproducibility
+- `task8-performance` - Task 8: Performance profiling
+- `task9-documentation` - Task 9: Documentation
+- `final` - Final submission version
+
+To view all tags:
+```bash
+git tag -l
+```
+
+To view a specific tag:
+```bash
+git show <tag-name>
+```
 
 ## License
 
