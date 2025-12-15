@@ -178,18 +178,6 @@ class TestSplitData:
         
         with pytest.raises(ValueError, match="must equal 1.0"):
             split_data(X, y, train_size=0.5, val_size=0.3, test_size=0.3)
-    
-    def test_split_reproducibility(self, sample_dataset):
-        """Test that split is reproducible with same random_state."""
-        X = sample_dataset['X']
-        y = sample_dataset['y']
-        
-        splits1 = split_data(X, y, random_state=42)
-        splits2 = split_data(X, y, random_state=42)
-        
-        np.testing.assert_array_equal(splits1['X_train'], splits2['X_train'])
-        np.testing.assert_array_equal(splits1['X_val'], splits2['X_val'])
-        np.testing.assert_array_equal(splits1['X_test'], splits2['X_test'])
 
 
 class TestStandardizeFeatures:

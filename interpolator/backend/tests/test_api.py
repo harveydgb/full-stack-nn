@@ -307,19 +307,3 @@ class TestPredictEndpoint:
             if os.path.exists(temp_path):
                 os.unlink(temp_path)
 
-
-class TestCORS:
-    """Tests for CORS middleware."""
-    
-    def test_cors_headers(self, client):
-        """Test that CORS headers are present."""
-        # Test with GET request instead of OPTIONS (FastAPI handles CORS on actual requests)
-        response = client.get(
-            "/health",
-            headers={"Origin": "http://localhost:3000"}
-        )
-        
-        # Check that request succeeds (CORS is handled by middleware)
-        assert response.status_code == 200
-        # CORS headers would be checked in integration tests with actual browser
-

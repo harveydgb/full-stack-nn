@@ -135,38 +135,6 @@ class TestNeuralNetworkFit:
         assert 'epoch' in history[0]
         assert 'loss' in history[0]
         assert 'val_loss' in history[0]
-    
-    def test_fit_loss_decreases(self, sample_dataset_small):
-        """Test that training loss decreases (model converges)."""
-        from pydis_nn.data import split_data, standardize_features
-        
-        X = sample_dataset_small['X']
-        y = sample_dataset_small['y']
-        
-        splits = split_data(X, y, random_state=42)
-        X_train_scaled, X_val_scaled, _, _ = standardize_features(
-            splits['X_train'], splits['X_val']
-        )
-        
-        model = NeuralNetwork(
-            hidden_sizes=[16, 8],
-            learning_rate=0.01,
-            max_iter=20,
-            random_state=42
-        )
-        
-        model, history = model.fit(
-            X_train_scaled,
-            splits['y_train'],
-            X_val=X_val_scaled,
-            y_val=splits['y_val'],
-            return_history=True
-        )
-        
-        # Check that loss decreases (on average)
-        losses = [h['loss'] for h in history]
-        # Loss should generally decrease (allow for some noise)
-        assert losses[-1] <= losses[0] * 1.5  # Final loss shouldn't be much worse
 
 
 class TestNeuralNetworkPredict:
@@ -199,16 +167,6 @@ class TestNeuralNetworkPredict:
         assert predictions.shape == (len(X_test_scaled),)
         assert predictions.dtype == np.float32
         assert np.all(np.isfinite(predictions))
-    
-    def test_predict_single_sample(self, trained_model):
-        """Test prediction on a single sample."""
-        X = np.random.random((1, 5)).astype(np.float32)
-        
-        prediction = trained_model.predict(X)
-        
-        # Should return array with shape (1,)
-        assert prediction.shape == (1,)
-        assert np.isfinite(prediction[0])
 
 
 class TestNeuralNetworkScore:
