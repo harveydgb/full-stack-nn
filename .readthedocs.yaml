@@ -9,11 +9,11 @@ build:
 python:
   install:
     - method: pip
-      path: backend
+      path: interpolator/backend
       extra_requirements:
         - docs
 
 sphinx:
-  configuration: backend/docs/source/conf.py
+  configuration: interpolator/backend/docs/source/conf.py
   builder: html
 
