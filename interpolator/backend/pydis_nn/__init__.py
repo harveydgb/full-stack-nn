@@ -2,7 +2,7 @@
 pydis_nn: Neural network package for 5D data interpolation.
 """
 
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 
 from .data import (
     load_dataset,

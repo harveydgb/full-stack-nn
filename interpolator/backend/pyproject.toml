@@ -1,14 +1,14 @@
 [project]
 name = "pydis_nn"
-version = "1.0.0"
-description = "Backend API for 5D neural network interpolation system"
+version = "1.0.1"
+description = "A lightweight Python package for training neural networks to interpolate 5-dimensional numerical datasets"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}
 authors = [
     {name = "Harvey Bermingham"}
 ]
-keywords = ["neural-network", "interpolation", "machine-learning", "fastapi"]
+keywords = ["neural-network", "interpolation", "machine-learning", "tensorflow", "keras", "5d", "regression"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Science/Research",
@@ -17,8 +17,9 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Information Analysis",
 ]
-
 dependencies = [
     "numpy>=1.24.0",
     "tensorflow>=2.13.0",
@@ -30,6 +31,13 @@ dependencies = [
     "scikit-learn>=1.3.0",
     "matplotlib>=3.7.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/harveydgb/full-stack-nn"
+Documentation = "https://pydis-nn.readthedocs.io/"
+Repository = "https://github.com/harveydgb/full-stack-nn"
+"Bug Tracker" = "https://github.com/harveydgb/full-stack-nn/issues"
+PyPI = "https://pypi.org/project/pydis-nn/"
 
 [project.optional-dependencies]
 dev = [
