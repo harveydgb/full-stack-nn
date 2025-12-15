@@ -131,6 +131,41 @@ export default function Page() {
     }
   };
 
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      // Check if it's a .pkl file
+      if (file.name.endsWith('.pkl')) {
+        setUploadedFile(file);
+        setUploadStatus("idle");
+        setUploadError(null);
+        setDatasetInfo(null);
+        setUploadResultsExpanded(false);
+      } else {
+        setUploadError("Please upload a .pkl file");
+        setUploadStatus("error");
+      }
+    }
+  };
+
   const handleUpload = async () => {
     if (!uploadedFile) return;
 
@@ -400,10 +435,15 @@ export default function Page() {
 
               <div className="space-y-6">
                 <label className="block cursor-pointer group relative">
-                  <div className={`glass-panel border-2 rounded-3xl p-16 text-center transition-all duration-500 ease-in-out overflow-hidden
-                    ${uploadStatus === 'error' ? 'border-red-200/50 bg-red-50/10' : 
-                      uploadStatus === 'success' ? 'border-green-200/50 bg-green-50/10' : 
-                      uploadedFile ? 'border-black/20 bg-gray-50/30' : 'border-gray-200/50 hover:border-gray-300/80 hover:bg-gray-50/30'}`}>
+                  <div 
+                    onDragOver={handleDragOver}
+                    onDragEnter={handleDragEnter}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                    className={`glass-panel border-2 rounded-3xl p-16 text-center transition-all duration-500 ease-in-out overflow-hidden
+                      ${uploadStatus === 'error' ? 'border-red-200/50 bg-red-50/10' : 
+                        uploadStatus === 'success' ? 'border-green-200/50 bg-green-50/10' : 
+                        uploadedFile ? 'border-black/20 bg-gray-50/30' : 'border-gray-200/50 hover:border-gray-300/80 hover:bg-gray-50/30'}`}>
                     
                     <input
                       type="file"
