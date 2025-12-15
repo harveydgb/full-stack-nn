@@ -11,28 +11,6 @@ This project implements a complete machine learning pipeline:
 
 The system automatically handles data preprocessing (missing values, standardization), train/validation/test splits, and provides comprehensive metrics and visualizations.
 
-## Architecture
-
-```
-┌─────────────────┐
-│   Next.js UI    │  ← Frontend (Port 3000)
-│  (React/TypeScript) │
-└────────┬────────┘
-         │ HTTP/REST
-         │
-┌────────▼────────┐
-│  FastAPI Backend │  ← Backend (Port 8000)
-│  (Python/TensorFlow) │
-└────────┬────────┘
-         │
-┌────────▼────────┐
-│   pydis_nn      │  ← Core ML Package
-│  - data.py      │     (Data handling, preprocessing)
-│  - neuralnetwork.py │ (Neural network model)
-│  - utils.py     │     (Dataset generation)
-└─────────────────┘
-```
-
 ## Prerequisites
 
 - **Python** 3.10+ (for backend)
