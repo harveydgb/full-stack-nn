@@ -58,6 +58,12 @@ The system automatically handles data preprocessing (missing values, standardiza
 
 ## Local Development Setup
 
+**Note:** All commands should be run from the `interpolator/` directory. First navigate to the project directory:
+
+```bash
+cd interpolator
+```
+
 ### Option 1: Docker Compose (Recommended)
 
 Start both backend and frontend services:
@@ -263,18 +269,19 @@ pydis_nn/
 
 ```
 hb747/
-├── backend/
-│   ├── pydis_nn/        # Core ML package
-│   ├── tests/           # Test suite
-│   ├── main.py          # FastAPI application
-│   ├── Dockerfile       # Backend container
-│   └── pyproject.toml   # Package configuration
-├── frontend/
-│   ├── src/app/         # Next.js application
-│   ├── Dockerfile       # Frontend container
-│   └── package.json     # Node.js dependencies
-├── docker-compose.yml   # Service orchestration
-└── README.md           # This file
+└── interpolator/
+    ├── backend/
+    │   ├── pydis_nn/        # Core ML package
+    │   ├── tests/           # Test suite
+    │   ├── main.py          # FastAPI application
+    │   ├── Dockerfile       # Backend container
+    │   └── pyproject.toml   # Package configuration
+    ├── frontend/
+    │   ├── src/app/         # Next.js application
+    │   ├── Dockerfile       # Frontend container
+    │   └── package.json     # Node.js dependencies
+    ├── docker-compose.yml   # Service orchestration
+    └── README.md           # This file
 ```
 
 ### Code Quality
