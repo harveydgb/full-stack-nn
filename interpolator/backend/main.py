@@ -194,7 +194,7 @@ async def upload_dataset(file: UploadFile = File(...)):
                 os.unlink(tmp_path)
             raise HTTPException(status_code=400, detail=str(e))
     
-    except HTTPException:
+    except HTTPException
         # Re-raise HTTPException
         raise
     except Exception as e:
