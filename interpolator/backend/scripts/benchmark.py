@@ -20,6 +20,7 @@ from pydis_nn.neuralnetwork import NeuralNetwork
 
 # Configuration
 DATASET_SIZES = list(range(1000, 11000, 1000))  # 1K to 10K in 1K increments
+N_RUNS = 5  # Number of runs per dataset size for statistical robustness
 HYPERPARAMETERS = {
     'hidden_sizes': [64, 32, 16],
     'learning_rate': 0.001,
@@ -34,18 +35,46 @@ SPLIT_RATIOS = {
 }
 
 
-def benchmark_dataset_size(n_samples: int) -> Dict:
+def calculate_statistics(run_results: List[Dict]) -> Dict:
     """
-    Benchmark training time and accuracy for given dataset size.
+    Calculate statistics (mean, std, min, max) across multiple runs.
+    
+    Args:
+        run_results: List of result dictionaries from individual runs
+        
+    Returns:
+        Dictionary containing statistics for each metric
+    """
+    metrics = [
+        'training_time_seconds', 'train_r2', 'val_r2', 'test_r2',
+        'train_mse', 'val_mse', 'test_mse'
+    ]
+    
+    stats = {}
+    for metric in metrics:
+        values = [r[metric] for r in run_results]
+        stats[f'{metric}_mean'] = round(float(np.mean(values)), 6)
+        stats[f'{metric}_std'] = round(float(np.std(values)), 6)
+        stats[f'{metric}_min'] = round(float(np.min(values)), 6)
+        stats[f'{metric}_max'] = round(float(np.max(values)), 6)
+    
+    return stats
+
+
+def benchmark_dataset_size(n_samples: int, run_number: int = None) -> Dict:
+    """
+    Benchmark training time and accuracy for given dataset size (single run).
     
     Args:
         n_samples: Number of samples in the dataset
+        run_number: Optional run number for logging (1-indexed)
         
     Returns:
-        Dictionary containing benchmark results
+        Dictionary containing benchmark results for a single run
     """
+    run_label = f" (Run {run_number}/{N_RUNS})" if run_number else ""
     print(f"\n{'='*60}")
-    print(f"Benchmarking dataset size: {n_samples:,} samples")
+    print(f"Benchmarking dataset size: {n_samples:,} samples{run_label}")
     print(f"{'='*60}")
     
     # Generate dataset
@@ -121,10 +150,11 @@ def benchmark_dataset_size(n_samples: int) -> Dict:
 
 
 def main():
-    """Run benchmarks for all dataset sizes."""
+    """Run benchmarks for all dataset sizes with multiple runs for statistical robustness."""
     print(f"\n{'#'*60}")
     print(f"# Performance Benchmark Suite")
     print(f"# Dataset sizes: {min(DATASET_SIZES):,} to {max(DATASET_SIZES):,} (1K increments)")
+    print(f"# Runs per size: {N_RUNS} (for statistical robustness)")
     print(f"# Epochs: {HYPERPARAMETERS['max_iter']} (early stopping disabled)")
     print(f"{'#'*60}\n")
     
@@ -133,8 +163,39 @@ def main():
     
     for size in DATASET_SIZES:
         try:
-            result = benchmark_dataset_size(size)
-            results.append(result)
+            print(f"\n{'#'*60}")
+            print(f"# Dataset Size: {size:,} samples ({N_RUNS} runs)")
+            print(f"{'#'*60}")
+            
+            # Run multiple times
+            run_results = []
+            for run_idx in range(1, N_RUNS + 1):
+                result = benchmark_dataset_size(size, run_number=run_idx)
+                run_results.append(result)
+            
+            # Calculate statistics across runs
+            stats = calculate_statistics(run_results)
+            
+            # Create aggregated result with statistics
+            aggregated_result = {
+                'dataset_size': size,
+                'n_runs': N_RUNS,
+                'epochs_used': HYPERPARAMETERS['max_iter'],
+                **stats,
+                'individual_runs': run_results  # Keep individual runs for detailed analysis
+            }
+            
+            results.append(aggregated_result)
+            
+            # Print summary for this dataset size
+            print(f"\nSummary for {size:,} samples (across {N_RUNS} runs):")
+            print(f"  Training time: {stats['training_time_seconds_mean']:.2f}s "
+                  f"(±{stats['training_time_seconds_std']:.2f}s)")
+            print(f"  Test R²: {stats['test_r2_mean']:.4f} "
+                  f"(±{stats['test_r2_std']:.4f}, range: [{stats['test_r2_min']:.4f}, {stats['test_r2_max']:.4f}])")
+            print(f"  Test MSE: {stats['test_mse_mean']:.6f} "
+                  f"(±{stats['test_mse_std']:.6f})")
+            
         except Exception as e:
             print(f"ERROR: Benchmark failed for {size} samples: {e}")
             raise
@@ -146,6 +207,7 @@ def main():
         'timestamp': datetime.now().isoformat(),
         'hyperparameters': HYPERPARAMETERS,
         'split_ratios': SPLIT_RATIOS,
+        'n_runs_per_size': N_RUNS,
         'total_benchmark_time_seconds': round(total_time, 2),
         'results': results
     }
@@ -165,14 +227,17 @@ def main():
     print(f"{'='*60}\n")
     
     # Print summary table
-    print("\nSummary:")
-    print(f"{'Size':<8} {'Time (s)':<12} {'Test R²':<10} {'Test MSE':<12}")
-    print("-" * 45)
+    print("\n" + "="*60)
+    print("SUMMARY TABLE (averaged across runs)")
+    print("="*60)
+    print(f"{'Size':<8} {'Time (s)':<15} {'Test R²':<15} {'Test MSE':<15}")
+    print(f"{'':<8} {'Mean ± Std':<15} {'Mean ± Std':<15} {'Mean ± Std':<15}")
+    print("-" * 60)
     for result in results:
         print(f"{result['dataset_size']:<8} "
-              f"{result['training_time_seconds']:<12.2f} "
-              f"{result['test_r2']:<10.4f} "
-              f"{result['test_mse']:<12.6f}")
+              f"{result['training_time_seconds_mean']:.2f}±{result['training_time_seconds_std']:.2f}  "
+              f"{result['test_r2_mean']:.4f}±{result['test_r2_std']:.4f}    "
+              f"{result['test_mse_mean']:.6f}±{result['test_mse_std']:.6f}")
 
 
 if __name__ == '__main__':

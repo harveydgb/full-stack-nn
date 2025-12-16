@@ -61,9 +61,10 @@ Measurement code:
 - Recommended for benchmarking in Python
 
 **Average over multiple runs:**
-- Currently: Single run per dataset size (for benchmarking speed)
-- For reproducibility: Random seed is fixed (random_state=42)
-- For more robust statistics: Could run multiple times and average (not currently implemented)
+- Each dataset size is benchmarked **5 times** for statistical robustness
+- Results are averaged across runs with statistics calculated (mean, std, min, max)
+- For reproducibility: Random seed is fixed (random_state=42) across all runs
+- This approach provides more reliable and statistically significant results
 
 Memory Profiling Methodology
 -----------------------------
@@ -203,10 +204,12 @@ Visualization
 Benchmark Results
 -----------------
 
+**Note:** All benchmark results shown below are averaged across 5 runs per dataset size. Error bars in plots and standard deviations in tables represent the variability across runs.
+
 Training Time
 ~~~~~~~~~~~~~
 
-The following table shows training time results across different dataset sizes:
+The following table shows average training time results (mean ± std) across different dataset sizes:
 
 .. list-table:: Training Time Results
    :header-rows: 1

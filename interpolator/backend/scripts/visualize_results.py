@@ -37,15 +37,31 @@ def load_memory_profile(profile_path: Optional[Path] = None) -> dict:
 
 
 def plot_training_time_vs_dataset_size(results: dict, output_dir: Path):
-    """Plot training time vs dataset size."""
+    """Plot training time vs dataset size with error bars."""
     dataset_sizes = [r['dataset_size'] for r in results['results']]
-    training_times = [r['training_time_seconds'] for r in results['results']]
+    
+    # Handle both old format (single values) and new format (statistics)
+    if 'training_time_seconds_mean' in results['results'][0]:
+        training_times = [r['training_time_seconds_mean'] for r in results['results']]
+        time_stds = [r['training_time_seconds_std'] for r in results['results']]
+        use_error_bars = True
+    else:
+        training_times = [r['training_time_seconds'] for r in results['results']]
+        time_stds = None
+        use_error_bars = False
     
     plt.figure(figsize=(10, 6))
-    plt.plot(dataset_sizes, training_times, marker='o', linewidth=2, markersize=8)
+    if use_error_bars:
+        plt.errorbar(dataset_sizes, training_times, yerr=time_stds, 
+                    marker='o', linewidth=2, markersize=8, capsize=5, capthick=2)
+    else:
+        plt.plot(dataset_sizes, training_times, marker='o', linewidth=2, markersize=8)
     plt.xlabel('Dataset Size (samples)', fontsize=12)
     plt.ylabel('Training Time (seconds)', fontsize=12)
-    plt.title('Training Time vs Dataset Size', fontsize=14, fontweight='bold')
+    title = 'Training Time vs Dataset Size'
+    if use_error_bars:
+        title += ' (mean ± std across runs)'
+    plt.title(title, fontsize=14, fontweight='bold')
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
     
@@ -56,26 +72,52 @@ def plot_training_time_vs_dataset_size(results: dict, output_dir: Path):
 
 
 def plot_accuracy_vs_dataset_size(results: dict, output_dir: Path):
-    """Plot R² and MSE vs dataset size."""
+    """Plot R² and MSE vs dataset size with error bars."""
     dataset_sizes = [r['dataset_size'] for r in results['results']]
-    test_r2 = [r['test_r2'] for r in results['results']]
-    test_mse = [r['test_mse'] for r in results['results']]
+    
+    # Handle both old format (single values) and new format (statistics)
+    if 'test_r2_mean' in results['results'][0]:
+        test_r2 = [r['test_r2_mean'] for r in results['results']]
+        test_r2_stds = [r['test_r2_std'] for r in results['results']]
+        test_mse = [r['test_mse_mean'] for r in results['results']]
+        test_mse_stds = [r['test_mse_std'] for r in results['results']]
+        use_error_bars = True
+    else:
+        test_r2 = [r['test_r2'] for r in results['results']]
+        test_r2_stds = None
+        test_mse = [r['test_mse'] for r in results['results']]
+        test_mse_stds = None
+        use_error_bars = False
     
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
     
     # R² plot
-    ax1.plot(dataset_sizes, test_r2, marker='o', linewidth=2, markersize=8, color='green')
+    if use_error_bars:
+        ax1.errorbar(dataset_sizes, test_r2, yerr=test_r2_stds,
+                    marker='o', linewidth=2, markersize=8, color='green',
+                    capsize=5, capthick=2)
+        title1 = 'Test R² vs Dataset Size (mean ± std)'
+    else:
+        ax1.plot(dataset_sizes, test_r2, marker='o', linewidth=2, markersize=8, color='green')
+        title1 = 'Test R² vs Dataset Size'
     ax1.set_xlabel('Dataset Size (samples)', fontsize=12)
     ax1.set_ylabel('Test R² Score', fontsize=12)
-    ax1.set_title('Test R² vs Dataset Size', fontsize=13, fontweight='bold')
+    ax1.set_title(title1, fontsize=13, fontweight='bold')
     ax1.grid(True, alpha=0.3)
     ax1.set_ylim([min(test_r2) * 0.99, max(test_r2) * 1.01])
     
     # MSE plot
-    ax2.plot(dataset_sizes, test_mse, marker='o', linewidth=2, markersize=8, color='red')
+    if use_error_bars:
+        ax2.errorbar(dataset_sizes, test_mse, yerr=test_mse_stds,
+                    marker='o', linewidth=2, markersize=8, color='red',
+                    capsize=5, capthick=2)
+        title2 = 'Test MSE vs Dataset Size (mean ± std)'
+    else:
+        ax2.plot(dataset_sizes, test_mse, marker='o', linewidth=2, markersize=8, color='red')
+        title2 = 'Test MSE vs Dataset Size'
     ax2.set_xlabel('Dataset Size (samples)', fontsize=12)
     ax2.set_ylabel('Test MSE', fontsize=12)
-    ax2.set_title('Test MSE vs Dataset Size', fontsize=13, fontweight='bold')
+    ax2.set_title(title2, fontsize=13, fontweight='bold')
     ax2.grid(True, alpha=0.3)
     
     plt.tight_layout()
@@ -131,16 +173,34 @@ def plot_memory_usage(profile: dict, output_dir: Path):
 
 
 def plot_scaling_analysis(results: dict, output_dir: Path):
-    """Plot scaling analysis (time per sample)."""
+    """Plot scaling analysis (time per sample) with error bars."""
     dataset_sizes = np.array([r['dataset_size'] for r in results['results']])
-    training_times = np.array([r['training_time_seconds'] for r in results['results']])
-    time_per_sample = training_times / dataset_sizes
+    
+    # Handle both old format (single values) and new format (statistics)
+    if 'training_time_seconds_mean' in results['results'][0]:
+        training_times = np.array([r['training_time_seconds_mean'] for r in results['results']])
+        time_stds = np.array([r['training_time_seconds_std'] for r in results['results']])
+        time_per_sample = training_times / dataset_sizes
+        time_per_sample_stds = time_stds / dataset_sizes
+        use_error_bars = True
+    else:
+        training_times = np.array([r['training_time_seconds'] for r in results['results']])
+        time_per_sample = training_times / dataset_sizes
+        time_per_sample_stds = None
+        use_error_bars = False
     
     plt.figure(figsize=(10, 6))
-    plt.plot(dataset_sizes, time_per_sample, marker='o', linewidth=2, markersize=8, color='purple')
+    if use_error_bars:
+        plt.errorbar(dataset_sizes, time_per_sample, yerr=time_per_sample_stds,
+                    marker='o', linewidth=2, markersize=8, color='purple',
+                    capsize=5, capthick=2)
+        title = 'Scaling Analysis: Training Time per Sample (mean ± std)'
+    else:
+        plt.plot(dataset_sizes, time_per_sample, marker='o', linewidth=2, markersize=8, color='purple')
+        title = 'Scaling Analysis: Training Time per Sample'
     plt.xlabel('Dataset Size (samples)', fontsize=12)
     plt.ylabel('Training Time per Sample (seconds)', fontsize=12)
-    plt.title('Scaling Analysis: Training Time per Sample', fontsize=14, fontweight='bold')
+    plt.title(title, fontsize=14, fontweight='bold')
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
     
