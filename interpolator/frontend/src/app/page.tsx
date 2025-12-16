@@ -49,7 +49,6 @@ type TrainRequest = {
   train_size: number;
   val_size: number;
   test_size: number;
-  standardize: boolean;
 };
 
 type TrainResponse = {
@@ -88,12 +87,11 @@ export default function Page() {
   const [trainingParams, setTrainingParams] = useState<TrainRequest>({
     hidden_sizes: [64, 32, 16],
     learning_rate: 0.001,
-    max_iter: 1000,
+    max_iter: 300,
     random_state: 42,
     train_size: 0.7,
     val_size: 0.15,
     test_size: 0.15,
-    standardize: true,
   });
   const [trainingStatus, setTrainingStatus] = useState<"idle" | "training" | "success" | "error">("idle");
   const [trainingResults, setTrainingResults] = useState<TrainResponse | null>(null);
@@ -238,7 +236,7 @@ export default function Page() {
       const res = await fetch(`${API_URL}/train`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...trainingParams, standardize: true }),
+        body: JSON.stringify(trainingParams),
         signal,
       });
 

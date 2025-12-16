@@ -113,7 +113,7 @@ class NeuralNetwork:
         # Prepare validation data if provided
         validation_data = None
         callbacks = []
-        loss_history_list = []X
+        loss_history_list = []
         
         if X_val is not None and y_val is not None:
             validation_data = (X_val.astype(np.float32), y_val.astype(np.float32))

@@ -55,9 +55,10 @@ Endpoints
         "random_state": 42,
         "train_size": 0.7,
         "val_size": 0.15,
-        "test_size": 0.15,
-        "standardize": true
+        "test_size": 0.15
       }
+   
+   **Note:** Feature standardization is always enabled (hardcoded to `true`). The `standardize` parameter is not accepted.
    
    **Response:**
    

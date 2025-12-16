@@ -13,19 +13,22 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
 
-def load_raw_dataset(filepath: str) -> Dict[str, np.ndarray]:
+def _load_pickle_file(filepath: str) -> Dict:
     """
-    Load raw dataset from .pkl file without preprocessing.
+    Internal helper to load pickle file and perform basic validation.
+    
+    Loads the file and validates it's a dictionary with 'X' and 'y' keys.
+    Does not validate dimensions or handle missing values.
     
     Args:
         filepath: Path to the .pkl file
         
     Returns:
-        Dictionary with keys 'X' and 'y' containing numpy arrays
+        Dictionary with keys 'X' and 'y' containing raw numpy arrays
         
     Raises:
         FileNotFoundError: If the file doesn't exist
-        ValueError: If the data format is invalid
+        ValueError: If the file format is invalid (not a dict, missing keys)
     """
     try:
         with open(filepath, 'rb') as f:
@@ -40,6 +43,25 @@ def load_raw_dataset(filepath: str) -> Dict[str, np.ndarray]:
         raise ValueError(f"Expected dictionary format, got {type(data)}")
     if 'X' not in data or 'y' not in data:
         raise ValueError("Dictionary must contain 'X' and 'y' keys")
+    
+    return data
+
+
+def load_raw_dataset(filepath: str) -> Dict[str, np.ndarray]:
+    """
+    Load raw dataset from .pkl file without preprocessing.
+    
+    Args:
+        filepath: Path to the .pkl file
+        
+    Returns:
+        Dictionary with keys 'X' and 'y' containing numpy arrays
+        
+    Raises:
+        FileNotFoundError: If the file doesn't exist
+        ValueError: If the data format is invalid
+    """
+    data = _load_pickle_file(filepath)
     
     X = np.array(data['X'])
     y = np.array(data['y'])
@@ -69,19 +91,7 @@ def load_dataset(filepath: str) -> Dict[str, np.ndarray]:
         FileNotFoundError: If the file doesn't exist
         ValueError: If the data format is invalid or dimensions are wrong
     """
-    try:
-        with open(filepath, 'rb') as f:
-            data = pickle.load(f)
-    except FileNotFoundError:
-        raise FileNotFoundError(f"Dataset file not found: {filepath}")
-    except Exception as e:
-        raise ValueError(f"Error loading pickle file: {str(e)}")
-    
-    # Expect dictionary format with 'X' and 'y' keys
-    if not isinstance(data, dict):
-        raise ValueError(f"Expected dictionary format, got {type(data)}")
-    if 'X' not in data or 'y' not in data:
-        raise ValueError("Dictionary must contain 'X' and 'y' keys")
+    data = _load_pickle_file(filepath)
     
     X = np.array(data['X'])
     y = np.array(data['y'])
@@ -271,4 +281,68 @@ def load_and_preprocess(
         splits['scaler'] = scaler
     
     return splits
+
+
+def calculate_dataset_statistics(
+    X_raw: np.ndarray,
+    y_raw: np.ndarray,
+    X_processed: np.ndarray,
+    y_processed: np.ndarray
+) -> Dict:
+    """
+    Calculate comprehensive statistics for a dataset.
+    
+    Computes statistics from both raw (unprocessed) and processed data:
+    - Raw stats: missing values count, feature ranges (pre-standardization)
+    - Processed stats: duplicate rows, memory usage, feature statistics
+    
+    Args:
+        X_raw: Raw feature array before preprocessing (n_samples, 5)
+        y_raw: Raw target array before preprocessing (n_samples,)
+        X_processed: Processed feature array after handling missing values (n_samples, 5)
+        y_processed: Processed target array after handling missing values (n_samples,)
+        
+    Returns:
+        Dictionary containing:
+        - 'missing_values': int - Count of missing/invalid values in raw data
+        - 'feature_ranges': List[Dict] - List of {'min': float, 'max': float} for each feature (raw)
+        - 'duplicate_rows': int - Number of duplicate rows in processed data
+        - 'memory_usage_mb': float - Memory usage in MB for processed data
+        - 'feature_stats': Dict with min_avg, max_avg, target_mean, target_std, target_min, target_max
+    """
+    # Calculate missing values from raw data (before any preprocessing)
+    missing_values = int(np.sum(~np.isfinite(X_raw)) + np.sum(~np.isfinite(y_raw)))
+    
+    # Calculate feature ranges from raw data (pre-standardization, pre-missing value handling)
+    feature_ranges = [
+        {
+            'min': float(np.nanmin(X_raw[:, i])),
+            'max': float(np.nanmax(X_raw[:, i]))
+        }
+        for i in range(X_raw.shape[1])
+    ]
+    
+    # Calculate duplicate rows from processed data (after missing values handled)
+    duplicate_rows = int(len(X_processed) - len(np.unique(X_processed, axis=0)))
+    
+    # Calculate memory usage from processed data
+    memory_usage_mb = float((X_processed.nbytes + y_processed.nbytes) / (1024 * 1024))
+    
+    # Calculate feature stats from processed data
+    feature_stats = {
+        'min_avg': float(X_processed.min(axis=0).mean()),
+        'max_avg': float(X_processed.max(axis=0).mean()),
+        'target_mean': float(y_processed.mean()),
+        'target_std': float(y_processed.std()),
+        'target_min': float(y_processed.min()),
+        'target_max': float(y_processed.max())
+    }
+    
+    return {
+        'missing_values': missing_values,
+        'feature_ranges': feature_ranges,
+        'duplicate_rows': duplicate_rows,
+        'memory_usage_mb': memory_usage_mb,
+        'feature_stats': feature_stats
+    }
 

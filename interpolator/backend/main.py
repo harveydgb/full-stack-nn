@@ -11,7 +11,7 @@ import os
 import time
 import numpy as np
 
-from pydis_nn.data import load_dataset, load_and_preprocess, load_raw_dataset
+from pydis_nn.data import load_dataset, load_and_preprocess, load_raw_dataset, calculate_dataset_statistics
 from pydis_nn.neuralnetwork import NeuralNetwork
 
 app = FastAPI(
@@ -62,12 +62,11 @@ class UploadResponse(BaseModel):
 class TrainRequest(BaseModel):
     hidden_sizes: List[int] = [64, 32, 16]
     learning_rate: float = 0.001
-    max_iter: int = 1000
+    max_iter: int = 300
     random_state: int = 42
     train_size: float = 0.7
     val_size: float = 0.15
     test_size: float = 0.15
-    standardize: bool = True
 
 
 class LossHistoryItem(BaseModel):
@@ -126,79 +125,49 @@ async def upload_dataset(file: UploadFile = File(...)):
             tmp.write(content)
             tmp_path = tmp.name
         
-        try:
-            # Load raw data to compute pre-standardization ranges and missing values
-            raw_data = load_raw_dataset(tmp_path)
-            X_raw = raw_data['X']
-            y_raw = raw_data['y']
-            
-            # Compute missing values from raw data (before any preprocessing)
-            missing_values = int(np.sum(~np.isfinite(X_raw)) + np.sum(~np.isfinite(y_raw)))
-            
-            # Compute feature ranges from raw data (pre-standardization, pre-missing value handling)
-            feature_ranges = [
-                FeatureRange(
-                    min=float(np.nanmin(X_raw[:, i])), 
-                    max=float(np.nanmax(X_raw[:, i]))
-                )
-                for i in range(X_raw.shape[1])
-            ]
-            
-            # Now load cleaned data for other statistics
-            data = load_dataset(tmp_path)
-            X = data['X']
-            y = data['y']
-            duplicate_rows = int(len(X) - len(np.unique(X, axis=0)))
-            memory_usage_mb = float((X.nbytes + y.nbytes) / (1024 * 1024))
-            
-            # Compute feature stats
-            feature_stats = FeatureStats(
-                min_avg=float(X.min(axis=0).mean()),
-                max_avg=float(X.max(axis=0).mean()),
-                target_mean=float(y.mean()),
-                target_std=float(y.std()),
-                target_min=float(y.min()),
-                target_max=float(y.max())
-            )
-            
-            # Store file path for training and clean up old file if exists
-            if app.state.dataset_path and os.path.exists(app.state.dataset_path):
-                try:
-                    os.unlink(app.state.dataset_path)
-                except (OSError, PermissionError) as e:
-                    # Log but don't fail the upload if old file can't be deleted
-                    # The old file will be overwritten on next successful upload
-                    pass
-            
-            app.state.dataset_path = tmp_path
-            app.state.model = None
-            app.state.scaler = None
-            
-            # Set tmp_path to None to prevent cleanup in outer except (file is now managed by app.state)
-            tmp_path = None
-            
-            return UploadResponse(
-                status="success",
-                message="Dataset uploaded successfully",
-                n_samples=X.shape[0],
-                n_features=X.shape[1],
-                missing_values=missing_values,
-                duplicate_rows=duplicate_rows,
-                memory_usage_mb=memory_usage_mb,
-                feature_stats=feature_stats,
-                feature_ranges=feature_ranges
-            )
-        except (ValueError, FileNotFoundError) as e:
-            # Clean up temp file on validation error
-            if tmp_path and os.path.exists(tmp_path):
-                os.unlink(tmp_path)
-            raise HTTPException(status_code=400, detail=str(e))
+        # Load raw data for pre-processing statistics
+        raw_data = load_raw_dataset(tmp_path)
+        X_raw = raw_data['X']
+        y_raw = raw_data['y']
+        
+        # Load processed data for post-processing statistics
+        data = load_dataset(tmp_path)
+        X = data['X']
+        y = data['y']
+        
+        # Calculate all statistics using data module function
+        stats = calculate_dataset_statistics(X_raw, y_raw, X, y)
+        
+        # Clean up old file if exists (silent failure is OK)
+        if app.state.dataset_path and os.path.exists(app.state.dataset_path):
+            try:
+                os.unlink(app.state.dataset_path)
+            except (OSError, PermissionError):
+                pass
+        
+        # Store file path for training
+        app.state.dataset_path = tmp_path
+        app.state.model = None
+        app.state.scaler = None
+        tmp_path = None  # Prevent cleanup since file is now managed by app.state
+        
+        return UploadResponse(
+            status="success",
+            message="Dataset uploaded successfully",
+            n_samples=X.shape[0],
+            n_features=X.shape[1],
+            missing_values=stats['missing_values'],
+            duplicate_rows=stats['duplicate_rows'],
+            memory_usage_mb=stats['memory_usage_mb'],
+            feature_stats=FeatureStats(**stats['feature_stats']),
+            feature_ranges=[FeatureRange(**fr) for fr in stats['feature_ranges']]
+        )
     
-    except HTTPException
-        # Re-raise HTTPException
-        raise
+    except (ValueError, FileNotFoundError) as e:
+        if tmp_path and os.path.exists(tmp_path):
+            os.unlink(tmp_path)
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        # Clean up temp file on any other unexpected error
         if tmp_path and os.path.exists(tmp_path):
             os.unlink(tmp_path)
         raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
@@ -326,7 +295,7 @@ async def predict(request: PredictRequest):
         prediction = app.state.model.predict(X)
         
         # Extract scalar value from numpy array
-        pred_value = float(prediction[0]) if len(prediction.shape) > 0 else float(prediction)
+        pred_value = float(prediction[0])
         
         return PredictResponse(
             status="success",
