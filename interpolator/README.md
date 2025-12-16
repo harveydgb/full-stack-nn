@@ -15,6 +15,28 @@ The system automatically handles data preprocessing (missing values, standardiza
 
 **📦 [Install from PyPI](https://pypi.org/project/pydis-nn/)** | **📚 [Full Documentation](https://pydis-nn.readthedocs.io/)** | **📊 [Performance Profiling](https://pydis-nn.readthedocs.io/en/latest/performance.html)**
 
+## Quick Start
+
+Get up and running in minutes:
+
+```bash
+# Clone the repository
+git clone <repository-url>
+cd interpolator
+
+# Start the application
+./scripts/launch-stack.sh
+
+# Open your browser to http://localhost:3000
+```
+
+That's it! The application will be running with:
+- Frontend UI at http://localhost:3000
+- Backend API at http://localhost:8000
+- API documentation at http://localhost:8000/docs
+
+See the [Local Development Setup](#local-development-setup) section below for detailed installation and configuration options.
+
 ## Prerequisites
 
 - **Python** 3.10+ (for backend)
