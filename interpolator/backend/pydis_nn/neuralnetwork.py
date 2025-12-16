@@ -54,6 +54,7 @@ class NeuralNetwork:
         self.early_stopping_patience = early_stopping_patience
         self.model = None
         self._is_trained = False
+        self._epochs_run = None
         
         # Set random seeds for reproducibility
         tf.random.set_seed(random_state)
@@ -144,7 +145,7 @@ class NeuralNetwork:
             callbacks.append(LossHistory(loss_history_list))
         
         # Train model with batch_size=32, verbose=0
-        self.model.fit(
+        history = self.model.fit(
             X, y,
             epochs=self.max_iter,
             batch_size=32,
@@ -152,6 +153,9 @@ class NeuralNetwork:
             validation_data=validation_data,
             callbacks=callbacks
         )
+        
+        # Store actual epochs run (may be less than max_iter due to early stopping)
+        self._epochs_run = len(history.history['loss']) if history and 'loss' in history.history else self.max_iter
         
         self._is_trained = True
         

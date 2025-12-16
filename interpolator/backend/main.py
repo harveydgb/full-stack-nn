@@ -220,8 +220,8 @@ async def train_model(request: TrainRequest):
         )
         training_time = time.time() - start_time
         
-        # Get number of epochs actually used (may be less than max_iter due to early stopping)
-        epochs_used = len(loss_history_list) if loss_history_list else request.max_iter
+        # Get actual epochs run (may be less than max_iter if early stopping triggered)
+        epochs_used = model._epochs_run
         
         # Evaluate model performance
         metrics = model.evaluate_all(
