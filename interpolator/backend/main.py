@@ -13,6 +13,10 @@ import numpy as np
 
 from pydis_nn.data import load_dataset, load_and_preprocess, load_raw_dataset, calculate_dataset_statistics
 from pydis_nn.neuralnetwork import NeuralNetwork
+from logger import Logger
+
+# Initialize logger
+logger = Logger()
 
 app = FastAPI(
     title="5D Neural Network Interpolator API",
@@ -180,6 +184,8 @@ async def train_model(request: TrainRequest):
     
     Requires a dataset to be uploaded first via /upload endpoint.
     """
+    logger.info("Training request received")
+    
     if app.state.dataset_path is None:
         raise HTTPException(
             status_code=400,
@@ -190,6 +196,7 @@ async def train_model(request: TrainRequest):
         raise HTTPException(status_code=400, detail="Dataset file not found")
     
     try:
+        logger.info("Starting data preprocessing")
         data = load_and_preprocess(
             app.state.dataset_path,
             train_size=request.train_size,
@@ -202,6 +209,7 @@ async def train_model(request: TrainRequest):
         # Store scaler for prediction if standardization was used
         app.state.scaler = data.get('scaler')
         
+        logger.info("Creating neural network model")
         model = NeuralNetwork(
             hidden_sizes=request.hidden_sizes,
             learning_rate=request.learning_rate,
@@ -210,6 +218,7 @@ async def train_model(request: TrainRequest):
         )
         
         # Train model with history tracking
+        logger.info(f"Starting training with max_iter={request.max_iter}")
         start_time = time.time()
         model, loss_history_list = model.fit(
             data['X_train'],
@@ -219,10 +228,12 @@ async def train_model(request: TrainRequest):
             return_history=True
         )
         training_time = time.time() - start_time
+        logger.info(f"Training completed in {training_time:.2f} seconds")
         
         # Get actual epochs run (may be less than max_iter if early stopping triggered)
         epochs_used = model._epochs_run
         
+        logger.info("Evaluating model performance")
         # Evaluate model performance
         metrics = model.evaluate_all(
             data['X_train'], data['y_train'],
@@ -248,6 +259,7 @@ async def train_model(request: TrainRequest):
         
         # Store trained model
         app.state.model = model
+        logger.info("Training completed successfully")
         
         return TrainResponse(
             status="success",
@@ -265,8 +277,10 @@ async def train_model(request: TrainRequest):
         )
     
     except ValueError as e:
+        logger.error(f"Training validation error: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
+        logger.error(f"Training failed: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Training failed: {str(e)}")
 
 
