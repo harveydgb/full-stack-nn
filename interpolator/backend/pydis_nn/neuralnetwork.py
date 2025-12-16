@@ -13,6 +13,8 @@ os.environ['CUDA_VISIBLE_DEVICES'] = "-1"
 import numpy as np
 import tensorflow as tf
 from typing import List, Optional
+from logger import Logger
+logger = Logger()
 
 # Force CPU-only mode (disable GPU)
 tf.config.set_visible_devices([], 'GPU')
@@ -154,6 +156,7 @@ class NeuralNetwork:
             callbacks.append(LossHistory(loss_history_list))
         
         # Train model with batch_size=32, verbose=0
+        logger.info(f"Calling model.fit() with {self.max_iter} epochs")
         history = self.model.fit(
             X, y,
             epochs=self.max_iter,
@@ -162,9 +165,11 @@ class NeuralNetwork:
             validation_data=validation_data,
             callbacks=callbacks
         )
+        logger.info("model.fit() completed")
         
         # Store actual epochs run (may be less than max_iter due to early stopping)
         self._epochs_run = len(history.history['loss']) if history and 'loss' in history.history else self.max_iter
+        logger.info(f"Training finished after {self._epochs_run} epochs")
         
         self._is_trained = True
         

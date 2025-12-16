@@ -11,6 +11,9 @@ import numpy as np
 from typing import Tuple, Dict, Optional
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
+from logger import Logger
+
+logger = Logger()
 
 
 def _load_pickle_file(filepath: str) -> Dict:
@@ -91,6 +94,7 @@ def load_dataset(filepath: str) -> Dict[str, np.ndarray]:
         FileNotFoundError: If the file doesn't exist
         ValueError: If the data format is invalid or dimensions are wrong
     """
+    logger.info(f"Loading dataset from {filepath}")
     data = _load_pickle_file(filepath)
     
     X = np.array(data['X'])
@@ -111,7 +115,9 @@ def load_dataset(filepath: str) -> Dict[str, np.ndarray]:
         raise ValueError(f"X must have exactly 5 features, got {X.shape[1]}")
     
     # Handle missing values
+    logger.info(f"Dataset loaded: {X.shape[0]} samples, {X.shape[1]} features")
     X, y = _handle_missing_values(X, y)
+    logger.info(f"After handling missing values: {X.shape[0]} samples")
     
     return {'X': X, 'y': y}
 
@@ -135,7 +141,7 @@ def _handle_missing_values(X: np.ndarray, y: np.ndarray) -> Tuple[np.ndarray, np
     valid_mask = np.isfinite(y)
     if not np.all(valid_mask):
         n_removed = np.sum(~valid_mask)
-        print(f"Warning: Removing {n_removed} samples with missing/invalid target values")
+        logger.warning(f"Removing {n_removed} samples with missing/invalid target values")
         X = X[valid_mask]
         y = y[valid_mask]
     
@@ -186,6 +192,8 @@ def split_data(
     if not np.isclose(total, 1.0, atol=0.01):
         raise ValueError(f"train_size + val_size + test_size must equal 1.0, got {total}")
     
+    logger.info(f"Splitting data: train={train_size:.2f}, val={val_size:.2f}, test={test_size:.2f} (n_samples={X.shape[0]})")
+    
     # First split: separate test set
     test_prop = test_size / (train_size + val_size + test_size)
     X_temp, X_test, y_temp, y_test = train_test_split(
@@ -197,6 +205,8 @@ def split_data(
     X_train, X_val, y_train, y_val = train_test_split(
         X_temp, y_temp, test_size=val_prop, random_state=random_state
     )
+    
+    logger.info(f"Data split complete: train={X_train.shape[0]}, val={X_val.shape[0]}, test={X_test.shape[0]}")
     
     return {
         'X_train': X_train,
@@ -227,11 +237,13 @@ def standardize_features(
         Tuple of (X_train_scaled, X_val_scaled, X_test_scaled, scaler)
         If X_val or X_test are None, corresponding output will be None
     """
+    logger.info("Standardizing features")
     scaler = StandardScaler()
     X_train_scaled = scaler.fit_transform(X_train)
     
     X_val_scaled = scaler.transform(X_val) if X_val is not None else None
     X_test_scaled = scaler.transform(X_test) if X_test is not None else None
+    logger.info("Feature standardization complete")
     
     return X_train_scaled, X_val_scaled, X_test_scaled, scaler
 

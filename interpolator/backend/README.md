@@ -9,6 +9,7 @@ A lightweight Python package for training and using neural networks to interpola
 - **Training**: Train models with optional validation data and early stopping
 - **Evaluation**: Compute R² scores and MSE metrics on test sets
 - **Utilities**: Generate synthetic 5D datasets for testing
+- **Logging**: Comprehensive logging system for debugging and monitoring training progress
 
 ## Quick Start
 
@@ -98,6 +99,16 @@ Your dataset should be a `.pkl` (pickle) file containing a dictionary:
 ### Utilities (`pydis_nn.utils`)
 
 - `generate_sample_dataset()`: Generate synthetic 5D datasets for testing
+
+### Logging
+
+The package includes a logging utility (`logger.py`) that provides structured logging throughout the application:
+
+- **Data processing logs**: Track dataset loading, preprocessing, and splitting
+- **Training logs**: Monitor model creation, training progress, and completion
+- **Error logs**: Detailed error messages for debugging
+
+Logs are automatically output to stdout/stderr and can be captured via Docker logs when running in containers. All log messages include timestamps and are formatted for easy reading.
 
 ## Performance
 

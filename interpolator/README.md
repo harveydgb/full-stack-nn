@@ -87,7 +87,25 @@ docker-compose down
 View logs:
 
 ```bash
+./scripts/docker-logs.sh
+```
+
+Or directly:
+
+```bash
 docker-compose logs -f
+```
+
+**Note**: The application includes comprehensive logging for debugging. When training models, you'll see detailed logs showing:
+- Dataset loading and preprocessing progress
+- Model creation and training progress
+- Training completion with timing information
+- Any errors or warnings
+
+View backend logs specifically to see training progress:
+
+```bash
+docker-compose logs -f backend
 ```
 
 #### Service URLs
@@ -258,6 +276,37 @@ Interactive API documentation is available when the backend is running:
 - **Health Check**: Root endpoint
 - **Port**: 3000
 
+## Logging and Debugging
+
+The application includes comprehensive logging to help debug issues. All logs are output to Docker logs and can be viewed using:
+
+```bash
+./scripts/docker-logs.sh
+```
+
+### Log Messages
+
+The logging system provides detailed information about:
+
+**Data Processing:**
+- Dataset loading progress
+- Data preprocessing steps (missing value handling, standardization)
+- Data splitting information
+
+**Training:**
+- Training request received
+- Model creation
+- Training start and completion
+- Training time and epochs used
+- Model evaluation progress
+
+**Errors:**
+- Validation errors
+- Training failures
+- Detailed error messages
+
+All log messages include timestamps and are formatted for easy reading. When troubleshooting issues, check the Docker logs to see exactly where the process is in the pipeline.
+
 ## Troubleshooting
 
 ### Common Issues
@@ -288,6 +337,12 @@ Interactive API documentation is available when the backend is running:
    - Install dev dependencies: `pip install -e ".[dev]"`
    - Ensure virtual environment is activated
    - Check Python version: `python --version` (should be 3.10+)
+
+7. **Training hangs or doesn't complete**
+   - Check Docker logs: `docker-compose logs -f backend`
+   - Look for log messages indicating where training stopped
+   - Verify dataset is valid and not too large for available resources
+   - Check for CUDA/GPU errors (should not occur with CPU-only mode)
 
 ## Package Structure
 
