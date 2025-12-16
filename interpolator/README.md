@@ -46,45 +46,55 @@ cd interpolator
 
 ### Option 1: Docker Compose (Recommended)
 
-Start both backend and frontend services:
+#### Using Convenience Scripts (Recommended)
 
-```bash
-docker-compose up --build
-```
-
-Or use the convenience script:
-
-```bash
-./scripts/docker-start.sh
-```
-
-Or use the launch script with health checks:
+Start both backend and frontend services with health checks:
 
 ```bash
 ./scripts/launch-stack.sh
 ```
 
-Services will be available at:
-- **Backend API**: http://localhost:8000
-- **Frontend UI**: http://localhost:3000
-- **API Docs (Swagger)**: http://localhost:8000/docs
-- **API Docs (ReDoc)**: http://localhost:8000/redoc
-
 Stop services:
-```bash
-docker-compose down
-```
-
-Or use the convenience script:
 
 ```bash
 ./scripts/docker-stop.sh
 ```
 
 View logs:
+
 ```bash
 ./scripts/docker-logs.sh
 ```
+
+#### Using Raw Docker Compose Commands
+
+Alternatively, you can use Docker Compose directly:
+
+Start services:
+
+```bash
+docker-compose up --build
+```
+
+Stop services:
+
+```bash
+docker-compose down
+```
+
+View logs:
+
+```bash
+docker-compose logs -f
+```
+
+#### Service URLs
+
+Services will be available at:
+- **Backend API**: http://localhost:8000
+- **Frontend UI**: http://localhost:3000
+- **API Docs (Swagger)**: http://localhost:8000/docs
+- **API Docs (ReDoc)**: http://localhost:8000/redoc
 
 ### Option 2: Manual Setup
 
