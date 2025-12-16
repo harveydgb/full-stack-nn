@@ -9,6 +9,9 @@ import numpy as np
 import tensorflow as tf
 from typing import List, Optional
 
+# Force CPU-only mode (disable GPU)
+tf.config.set_visible_devices([], 'GPU')
+
 
 class NeuralNetwork:
     """
