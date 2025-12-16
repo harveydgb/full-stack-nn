@@ -5,12 +5,18 @@ This module provides a lightweight, configurable neural network implementation
 using TensorFlow/Keras for regression tasks on 5-dimensional datasets.
 """
 
+import os
+
+# Force CPU-only mode (disable GPU)
+os.environ['CUDA_VISIBLE_DEVICES'] = "-1"
+
 import numpy as np
 import tensorflow as tf
 from typing import List, Optional
 
 # Force CPU-only mode (disable GPU)
 tf.config.set_visible_devices([], 'GPU')
+
 
 
 class NeuralNetwork:

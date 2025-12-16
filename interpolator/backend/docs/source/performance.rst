@@ -21,6 +21,7 @@ Software Environment
 - **Operating System**: macOS 26.0.1 (Darwin 25.0.0)
 - **Python Version**: 3.10+ (as required by project)
 - **TensorFlow Version**: As specified in requirements.txt
+- **TensorFlow Configuration**: CPU-only mode (GPU disabled via ``tf.config.set_visible_devices([], 'GPU')`` and ``CUDA_VISIBLE_DEVICES="-1"`` environment variable)
 - **NumPy Version**: As specified in requirements.txt
 - **Other Dependencies**: As specified in pyproject.toml
 

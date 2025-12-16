@@ -1,7 +1,7 @@
 Neural Network Module
 ======================
 
-The ``pydis_nn.neuralnetwork`` module provides a configurable neural network implementation using TensorFlow/Keras.
+The ``pydis_nn.neuralnetwork`` module provides a configurable neural network implementation using TensorFlow/Keras. TensorFlow is configured to use CPU-only mode for consistent performance across different hardware configurations.
 
 .. automodule:: pydis_nn.neuralnetwork
    :members:

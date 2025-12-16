@@ -7,9 +7,11 @@ A full-stack research-grade system for learning and serving neural network model
 This project implements a complete machine learning pipeline:
 - **Backend**: FastAPI server with neural network training and prediction endpoints
 - **Frontend**: Next.js web application with an interactive UI for dataset management and model training
-- **Neural Network**: Lightweight TensorFlow/Keras implementation optimized for 5D regression tasks
+- **Neural Network**: Lightweight TensorFlow/Keras implementation optimized for 5D regression tasks (CPU-only mode)
 
 The system automatically handles data preprocessing (missing values, standardization), train/validation/test splits, and provides comprehensive metrics and visualizations.
+
+**Note**: TensorFlow is configured to use CPU-only mode, ensuring consistent performance across different hardware configurations and avoiding GPU dependencies.
 
 **📦 [Install from PyPI](https://pypi.org/project/pydis-nn/)** | **📚 [Full Documentation](https://pydis-nn.readthedocs.io/)** | **📊 [Performance Profiling](https://pydis-nn.readthedocs.io/en/latest/performance.html)**
 
@@ -359,7 +361,7 @@ Training time was measured for datasets ranging from 1K to 10K samples. The mode
 **Scaling Behavior:**
 - Training time scales sub-linearly with dataset size
 - Time per sample decreases as dataset size increases (from 9.93ms to 3.17ms)
-- This indicates efficient batch processing and GPU/CPU utilization
+- This indicates efficient batch processing and CPU utilization (TensorFlow is configured for CPU-only mode)
 - A 10x increase in dataset size (1K → 10K) results in only ~3.2x increase in training time
 
 ### Memory Usage
