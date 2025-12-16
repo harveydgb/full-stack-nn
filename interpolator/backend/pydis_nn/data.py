@@ -11,7 +11,7 @@ import numpy as np
 from typing import Tuple, Dict, Optional
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
-from logger import Logger
+from .logger import Logger
 
 logger = Logger()
 

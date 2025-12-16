@@ -13,7 +13,7 @@ import numpy as np
 
 from pydis_nn.data import load_dataset, load_and_preprocess, load_raw_dataset, calculate_dataset_statistics
 from pydis_nn.neuralnetwork import NeuralNetwork
-from logger import Logger
+from pydis_nn.logger import Logger
 
 # Initialize logger
 logger = Logger()

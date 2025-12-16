@@ -13,7 +13,8 @@ os.environ['CUDA_VISIBLE_DEVICES'] = "-1"
 import numpy as np
 import tensorflow as tf
 from typing import List, Optional
-from logger import Logger
+from .logger import Logger
+
 logger = Logger()
 
 # Force CPU-only mode (disable GPU)
