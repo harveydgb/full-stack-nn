@@ -5,6 +5,7 @@ FROM python:3.12-slim as base
 ENV PYTHONPATH=/app
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
+ENV CUDA_VISIBLE_DEVICES=-1
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
