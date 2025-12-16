@@ -1,6 +1,6 @@
 # pydis_nn
 
-A lightweight Python package for training and using neural networks to interpolate 5-dimensional numerical datasets. Built with TensorFlow/Keras and optimized for fast training and inference. **Note**: TensorFlow is configured to use CPU-only mode for consistent performance across different hardware configurations.
+A lightweight Python package for training and using neural networks to interpolate 5-dimensional numerical datasets. Built with TensorFlow/Keras (CPU only) and optimized for fast training and inference.
 
 ## Features
 
