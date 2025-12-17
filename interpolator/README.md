@@ -547,8 +547,19 @@ git show <tag-name>
 
 ## License
 
-MIT License - See LICENSE file for details.
+Distributed under the MIT License.
 
 ## Authors
 
 - Harvey Bermingham
+
+## Use of Generative Tools
+
+This project has utlised auto-generative tools in the development of the frontend and backend of this application.
+
+Example prompts used for this project:
+- Generate python code for this plot
+- Create a general README.md template structure for this project
+- Generate doc-strings for this function
+- Generate code to create a button in the Next.js frontend
+- Adjust the frontend input boxes to become non-interactive when the training button is pressed
