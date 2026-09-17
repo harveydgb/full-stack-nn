@@ -228,9 +228,9 @@ xdg-open htmlcov/index.html  # Linux
 - View HTML report: `open htmlcov/index.html`
 
 Current test coverage includes:
-- Data loading and preprocessing (17 tests)
-- Neural network training and evaluation (13 tests)
-- API endpoints (12 tests)
+- Data loading and preprocessing (16 tests)
+- Neural network training and evaluation (11 tests)
+- API endpoints (11 tests)
 
 ## Dataset Format
 
@@ -524,16 +524,16 @@ This project uses semantic versioning. The version number is defined in:
 
 This project uses git tags to mark major milestones. Tags are created for each completed task:
 
-- `task1-repository-structure` - Task 1: Repository structure
-- `task2-package-config` - Task 2: Package configuration
-- `task3-data-handling` - Task 3: Data handling module
-- `task4-neural-network` - Task 4: Neural network implementation
-- `task5-fastapi-backend` - Task 5: FastAPI backend
-- `task6-frontend` - Task 6: Next.js frontend
-- `task7-testing` - Task 7: Testing and reproducibility
-- `task8-performance` - Task 8: Performance profiling
-- `task9-documentation` - Task 9: Documentation
-- `final` - Final submission version
+- `task-1/general` - Repository structure
+- `task-2` - Package configuration
+- `task-3` - Data handling module
+- `task-4` - Neural network implementation
+- `task-5` - FastAPI backend
+- `task-6` - Next.js frontend
+- `task-7` - Testing and reproducibility
+- `task-8` - Performance profiling
+- `task-9` - Documentation
+- `Release push` - Final submission version
 
 To view all tags:
 ```bash
